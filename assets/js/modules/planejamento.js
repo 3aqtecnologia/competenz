@@ -751,7 +751,7 @@ export const planejamento = {
                         <div class="flex gap-2">
                             <select name="matriz_id" class="input-field" style="flex: 1;">
                                 <option value="">Nenhuma matriz vinculada</option>
-                                ${allMatrices.map(m => `<option value="${m.id}" ${curso?.matriz_id === m.id ? 'selected' : ''}>${m.codigo}</option>`).join('')}
+                                ${allMatrices.map(m => `<option value="${m.id}" ${(curso?.matriz_id === m.id) ? 'selected' : ''}>${m.codigo}</option>`).join('')}
                             </select>
                         </div>
                         <small class="text-xs text-gray-500 mt-1">
