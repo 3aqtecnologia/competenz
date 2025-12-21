@@ -1,0 +1,5 @@
+
+const SUPABASE_URL = 'https://xblyvzxwvzqfveefuasd.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhibHl2enh3dnpxZnZlZWZ1YXNkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU5MDYwMzksImV4cCI6MjA4MTQ4MjAzOX0.ixqKmAGJES37ShNmr9f8aWGYRNbnDRBFTK9pZ0Z5m8E';
+
+export const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);

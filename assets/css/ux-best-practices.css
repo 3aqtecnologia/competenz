@@ -1,0 +1,463 @@
+/* === ADVANCED UX/UI BEST PRACTICES === */
+
+/* 1. VISUAL HIERARCHY - Clear information architecture */
+.hierarchy-primary {
+    font-size: 2.25rem;
+    font-weight: 800;
+    line-height: 1.2;
+    color: var(--color-text);
+}
+
+.hierarchy-secondary {
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.3;
+    color: var(--color-text);
+}
+
+.hierarchy-tertiary {
+    font-size: 1.125rem;
+    font-weight: 600;
+    line-height: 1.4;
+    color: var(--color-text);
+}
+
+/* 2. MICRO-INTERACTIONS - Delightful feedback */
+.interactive-element {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+}
+
+.interactive-element:hover {
+    transform: translateY(-2px);
+}
+
+.interactive-element:active {
+    transform: scale(0.98);
+}
+
+/* Button press effect */
+.btn-press {
+    position: relative;
+    transition: all 0.1s;
+}
+
+.btn-press:active {
+    transform: translateY(2px);
+    box-shadow: none !important;
+}
+
+/* 3. PROGRESSIVE DISCLOSURE - Show info when needed */
+.disclosure-trigger {
+    cursor: pointer;
+    user-select: none;
+}
+
+.disclosure-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.disclosure-content.expanded {
+    max-height: 1000px;
+}
+
+/* 4. AFFORDANCE - Clear clickable elements */
+.clickable {
+    cursor: pointer;
+    position: relative;
+}
+
+.clickable::after {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border-radius: inherit;
+    opacity: 0;
+    background: var(--color-primary);
+    transition: opacity 0.2s;
+    pointer-events: none;
+}
+
+.clickable:hover::after {
+    opacity: 0.1;
+}
+
+/* 5. FEEDBACK - Immediate response to actions */
+.feedback-success {
+    animation: successPulse 0.6s ease-out;
+}
+
+@keyframes successPulse {
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.05);
+        box-shadow: 0 0 0 10px rgba(16, 185, 129, 0.3);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+.feedback-error {
+    animation: errorShake 0.5s ease-out;
+}
+
+@keyframes errorShake {
+
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+
+    25% {
+        transform: translateX(-10px);
+    }
+
+    75% {
+        transform: translateX(10px);
+    }
+}
+
+/* 6. CONSISTENCY - Unified spacing system */
+:root {
+    --space-xs: 0.25rem;
+    /* 4px */
+    --space-sm: 0.5rem;
+    /* 8px */
+    --space-md: 1rem;
+    /* 16px */
+    --space-lg: 1.5rem;
+    /* 24px */
+    --space-xl: 2rem;
+    /* 32px */
+    --space-2xl: 3rem;
+    /* 48px */
+    --space-3xl: 4rem;
+    /* 64px */
+}
+
+/* 7. ACCESSIBILITY - WCAG 2.1 AA Compliance */
+.focus-ring:focus-visible {
+    outline: 3px solid var(--color-primary);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+/* Skip to main content */
+.skip-link {
+    position: absolute;
+    top: -40px;
+    left: 0;
+    background: var(--color-primary);
+    color: var(--color-sidebar);
+    padding: 8px 16px;
+    text-decoration: none;
+    border-radius: 0 0 8px 0;
+    font-weight: 600;
+    z-index: 9999;
+}
+
+.skip-link:focus {
+    top: 0;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+
+    .card,
+    .btn-primary,
+    .btn-secondary {
+        border: 2px solid currentColor;
+    }
+}
+
+/* 8. GESTALT PRINCIPLES - Visual grouping */
+.group-related {
+    padding: var(--space-lg);
+    background: rgba(0, 0, 0, 0.02);
+    border-radius: 16px;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.group-related+.group-related {
+    margin-top: var(--space-lg);
+}
+
+/* Proximity - Related items closer together */
+.proximity-group>*+* {
+    margin-top: var(--space-sm);
+}
+
+.proximity-section+.proximity-section {
+    margin-top: var(--space-2xl);
+}
+
+/* 9. FITTS'S LAW - Larger targets for important actions */
+.primary-action {
+    min-width: 120px;
+    min-height: 44px;
+    padding: 12px 24px;
+}
+
+.secondary-action {
+    min-width: 100px;
+    min-height: 40px;
+    padding: 10px 20px;
+}
+
+/* Corner targets easier to hit */
+.corner-action {
+    padding: 16px;
+}
+
+/* 10. HICK'S LAW - Reduce decision time */
+.action-group {
+    display: flex;
+    gap: var(--space-md);
+    flex-wrap: wrap;
+}
+
+.action-group>* {
+    flex: 1;
+    min-width: 200px;
+}
+
+/* Limit choices to 5-7 items */
+.choice-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+/* 11. MILLER'S LAW - Chunk information */
+.info-chunk {
+    margin-bottom: var(--space-xl);
+}
+
+.info-chunk-title {
+    font-weight: 700;
+    margin-bottom: var(--space-md);
+    color: var(--color-text);
+}
+
+/* 12. AESTHETIC-USABILITY EFFECT - Beautiful = Usable */
+.aesthetic-card {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.95) 100%);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    box-shadow:
+        0 1px 3px rgba(0, 0, 0, 0.05),
+        0 10px 40px rgba(0, 0, 0, 0.03),
+        inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+/* 13. JAKOB'S LAW - Familiar patterns */
+.familiar-pattern-search {
+    position: relative;
+}
+
+.familiar-pattern-search input {
+    padding-left: 40px;
+}
+
+.familiar-pattern-search i {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--color-text-muted);
+}
+
+/* 14. PEAK-END RULE - Memorable moments */
+.memorable-moment {
+    animation: celebrateSuccess 1s ease-out;
+}
+
+@keyframes celebrateSuccess {
+    0% {
+        transform: scale(0.8);
+        opacity: 0;
+    }
+
+    50% {
+        transform: scale(1.1);
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* Confetti effect on success */
+.success-celebration {
+    position: relative;
+}
+
+.success-celebration::before {
+    content: '🎉';
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 2rem;
+    animation: confettiFall 1s ease-out;
+}
+
+@keyframes confettiFall {
+    0% {
+        transform: translateX(-50%) translateY(-20px);
+        opacity: 1;
+    }
+
+    100% {
+        transform: translateX(-50%) translateY(20px);
+        opacity: 0;
+    }
+}
+
+/* 15. TESLER'S LAW - Simplify complexity */
+.complex-action-simplified {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+}
+
+.step-indicator {
+    display: flex;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-lg);
+}
+
+.step {
+    flex: 1;
+    height: 4px;
+    background: var(--color-border);
+    border-radius: 2px;
+    transition: background 0.3s;
+}
+
+.step.active {
+    background: var(--color-primary);
+}
+
+.step.completed {
+    background: var(--color-success);
+}
+
+/* 16. DOHERTY THRESHOLD - 400ms response */
+.instant-feedback {
+    transition: all 0.15s;
+}
+
+.loading-state {
+    position: relative;
+    pointer-events: none;
+    opacity: 0.6;
+}
+
+.loading-state::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* 17. ZEIGARNIK EFFECT - Progress indication */
+.progress-tracker {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: var(--space-md);
+    background: var(--color-bg);
+    border-radius: 12px;
+}
+
+.progress-step {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+}
+
+.progress-step.completed {
+    color: var(--color-success);
+}
+
+.progress-step.active {
+    color: var(--color-primary);
+    font-weight: 600;
+}
+
+/* 18. VON RESTORFF EFFECT - Make important things stand out */
+.standout {
+    position: relative;
+    padding: var(--space-lg);
+    background: linear-gradient(135deg, var(--color-primary) 0%, #D4FF4D 100%);
+    color: var(--color-sidebar);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(196, 255, 13, 0.3);
+}
+
+.standout::before {
+    content: '⭐';
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    font-size: 2rem;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+/* 19. SERIAL POSITION EFFECT - Important items first/last */
+.list-prioritized>*:first-child,
+.list-prioritized>*:last-child {
+    font-weight: 600;
+    background: rgba(196, 255, 13, 0.05);
+    border-left: 3px solid var(--color-primary);
+    padding-left: var(--space-md);
+}
+
+/* 20. COGNITIVE LOAD - Reduce mental effort */
+.low-cognitive-load {
+    font-size: 1rem;
+    line-height: 1.6;
+    max-width: 65ch;
+}
+
+.visual-aid {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+}
+
+.visual-aid-icon {
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-bg);
+    border-radius: 12px;
+    font-size: 1.5rem;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --color-bg: #1A1A1A;
+        --color-card: #2D2D2D;
+        --color-text: #F5F5F7;
+        --color-text-muted: #9CA3AF;
+        --color-border: #404040;
+    }
+}

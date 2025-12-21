@@ -1,0 +1,109 @@
+/* === STANDARDIZED CARD BEHAVIOR === */
+/* This file ensures ALL cards behave the same way */
+
+/* Override all card hover behaviors to be consistent */
+.card:hover,
+.glass-panel:hover,
+.card-lime:hover,
+.card-dark:hover,
+.card-gradient:hover,
+.card-info:hover,
+.card-success:hover,
+.card-warning:hover,
+.card-outlined:hover {
+    transform: translateY(-8px) scale(1.02) !important;
+    box-shadow:
+        0 4px 12px rgba(0, 0, 0, 0.08),
+        0 20px 60px rgba(0, 0, 0, 0.12),
+        0 0 0 1px rgba(196, 255, 13, 0.2) !important;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Ensure all cards have the same base transition */
+.card,
+.glass-panel,
+.card-lime,
+.card-dark,
+.card-gradient,
+.card-info,
+.card-success,
+.card-warning,
+.card-outlined {
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    cursor: pointer;
+}
+
+/* Ensure all cards show gradient border on hover */
+.card:hover::before,
+.glass-panel:hover::before,
+.card-lime:hover::before,
+.card-dark:hover::before,
+.card-gradient:hover::before,
+.card-info:hover::before,
+.card-success:hover::before,
+.card-warning:hover::before {
+    opacity: 1 !important;
+}
+
+/* Ensure all cards have shine effect on hover */
+.card:hover::after,
+.glass-panel:hover::after,
+.card-lime:hover::after,
+.card-dark:hover::after,
+.card-gradient:hover::after,
+.card-info:hover::after,
+.card-success:hover::after,
+.card-warning:hover::after {
+    transform: translateX(100%) translateY(100%) rotate(45deg) !important;
+}
+
+/* Ensure all card icons animate the same way */
+.card:hover .card-icon,
+.card-lime:hover .card-icon,
+.card-dark:hover .card-icon,
+.card-gradient:hover .card-icon,
+.card-info:hover .card-icon,
+.card-success:hover .card-icon,
+.card-warning:hover .card-icon {
+    transform: scale(1.1) rotate(5deg) !important;
+}
+
+/* Active state - same for all */
+.card:active,
+.glass-panel:active,
+.card-lime:active,
+.card-dark:active,
+.card-gradient:active,
+.card-info:active,
+.card-success:active,
+.card-warning:active,
+.card-outlined:active {
+    transform: translateY(-4px) scale(1.01) !important;
+}
+
+/* Focus state - same for all */
+.card:focus-visible,
+.glass-panel:focus-visible,
+.card-lime:focus-visible,
+.card-dark:focus-visible,
+.card-gradient:focus-visible,
+.card-info:focus-visible,
+.card-success:focus-visible,
+.card-warning:focus-visible,
+.card-outlined:focus-visible {
+    outline: 3px solid var(--color-primary);
+    outline-offset: 4px;
+}
+
+/* Ensure content is always above decorative elements */
+.card>*,
+.glass-panel>*,
+.card-lime>*,
+.card-dark>*,
+.card-gradient>*,
+.card-info>*,
+.card-success>*,
+.card-warning>* {
+    position: relative;
+    z-index: 2;
+}

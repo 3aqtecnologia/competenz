@@ -1,0 +1,184 @@
+/* === ADVANCED CARD DECORATIONS === */
+
+/* Add 3D transform capability */
+.card,
+.glass-panel {
+    transform-style: preserve-3d;
+}
+
+/* Decorative circles for lime cards */
+.card-lime::before {
+    content: '';
+    position: absolute;
+    top: -40px;
+    right: -40px;
+    width: 120px;
+    height: 120px;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+    border-radius: 50%;
+    z-index: 0;
+    pointer-events: none;
+}
+
+.card-lime::after {
+    content: '';
+    position: absolute;
+    bottom: -30px;
+    left: -30px;
+    width: 100px;
+    height: 100px;
+    background: radial-gradient(circle, rgba(0, 0, 0, 0.1) 0%, transparent 70%);
+    border-radius: 50%;
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* Grid pattern for dark cards */
+.card-dark::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    background-size: 20px 20px;
+    opacity: 0.5;
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* Animated gradient for gradient cards */
+.card-gradient::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(45deg,
+            transparent 0%,
+            rgba(255, 255, 255, 0.1) 50%,
+            transparent 100%);
+    animation: shimmer-gradient 3s ease-in-out infinite;
+    z-index: 0;
+    pointer-events: none;
+}
+
+@keyframes shimmer-gradient {
+
+    0%,
+    100% {
+        transform: translateX(-100%);
+    }
+
+    50% {
+        transform: translateX(100%);
+    }
+}
+
+/* Pulsing glow for info cards */
+.card-info::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.15) 0%, transparent 60%);
+    animation: pulse-glow 4s ease-in-out infinite;
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* Enhanced hover effects */
+.card-lime:hover {
+    box-shadow:
+        0 12px 48px rgba(196, 255, 13, 0.4),
+        0 0 0 1px rgba(196, 255, 13, 0.2),
+        0 0 60px rgba(196, 255, 13, 0.2);
+    transform: translateY(-10px) scale(1.03);
+}
+
+.card-dark:hover {
+    box-shadow:
+        0 12px 48px rgba(0, 0, 0, 0.5),
+        inset 0 1px 0 rgba(255, 255, 255, 0.15),
+        0 0 40px rgba(196, 255, 13, 0.1);
+}
+
+.card-gradient:hover {
+    box-shadow:
+        0 12px 48px rgba(139, 92, 246, 0.4),
+        0 0 0 1px rgba(236, 72, 153, 0.3),
+        0 0 60px rgba(139, 92, 246, 0.3);
+}
+
+.card-outlined:hover {
+    box-shadow: 0 4px 20px rgba(196, 255, 13, 0.15);
+}
+
+/* Enhanced card icon */
+.card-icon {
+    width: 56px !important;
+    height: 56px !important;
+    border-radius: 16px !important;
+    font-size: 1.75rem !important;
+    margin-bottom: 16px !important;
+    box-shadow:
+        0 4px 12px rgba(0, 0, 0, 0.1),
+        0 0 0 1px rgba(255, 255, 255, 0.1) !important;
+    transition: transform 0.3s;
+}
+
+.card:hover .card-icon {
+    transform: scale(1.1) rotate(5deg);
+}
+
+.card-icon-primary {
+    box-shadow: 0 8px 20px rgba(196, 255, 13, 0.3) !important;
+}
+
+.card-icon-purple {
+    box-shadow: 0 8px 20px rgba(139, 92, 246, 0.3) !important;
+}
+
+.card-icon-pink {
+    box-shadow: 0 8px 20px rgba(236, 72, 153, 0.3) !important;
+}
+
+.card-icon-blue {
+    box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3) !important;
+}
+
+/* Enhanced card stats with gradient text */
+.card-stat {
+    font-size: 2.25rem !important;
+    font-weight: 800 !important;
+    background: linear-gradient(135deg, var(--color-text) 0%, var(--color-text-muted) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Card badge */
+.card-badge {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    background: rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(10px);
+    z-index: 2;
+}
+
+/* Card header z-index fix */
+.card-header {
+    position: relative;
+    z-index: 1;
+}
+
+/* Ensure content is above decorative elements */
+.card>* {
+    position: relative;
+    z-index: 1;
+}

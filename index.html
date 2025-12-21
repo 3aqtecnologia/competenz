@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Competenz | Gestão Educacional</title>
+
+    <!-- Scripts & Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/locale/pt-br.js"></script>
+    <script src="https://unpkg.com/imask"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>dayjs.locale('pt-br'); window.dayjs = dayjs;</script>
+
+    <!-- Unified Design System -->
+    <link rel="stylesheet" href="assets/css/app.css">
+</head>
+
+<body>
+
+    <div id="app" class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="brand">
+                <i class="ph-fill ph-student"></i>
+                <div>
+                    <h1>Competenz</h1>
+                    <span class="text-xs">Educação do Futuro</span>
+                </div>
+            </div>
+
+            <button class="mobile-menu-btn" onclick="document.querySelector('.sidebar').classList.toggle('menu-open')">
+                <i class="ph ph-list"></i>
+            </button>
+
+            <nav class="sidebar-nav">
+                <ul class="nav-menu">
+                    <li><a class="nav-item active" onclick="app.navigate('dashboard')">
+                            <i class="ph ph-squares-four"></i> Dashboard
+                        </a></li>
+                    <li><a class="nav-item" onclick="app.navigate('secretaria')">
+                            <i class="ph ph-users"></i> Secretaria
+                        </a></li>
+                    <li><a class="nav-item" onclick="app.navigate('pedagogico')">
+                            <i class="ph ph-chalkboard-teacher"></i> Pedagógico
+                        </a></li>
+                    <li><a class="nav-item" onclick="app.navigate('planejamento')">
+                            <i class="ph ph-briefcase"></i> Planejamento
+                        </a></li>
+
+                    <!-- Separator for mobile/desktop logic -->
+                    <li class="nav-separator"></li>
+
+                    <li><a class="nav-item" style="opacity: 0.8;">
+                        <i class="ph ph-gear"></i> Configurações
+                    </a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-panel">
+            <div id="content-area" class="content-scroll">
+                <div style="height: 80vh; display: flex; align-items: center; justify-content: center;">
+                    <div class="loading-spinner"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- UI Overlay Components -->
+    <div id="toast" class="toast hidden"></div>
+
+    <div id="modal-backdrop" class="modal-backdrop hidden">
+        <div id="modal-panel" class="modal-panel">
+            <div class="modal-header">
+                <h3 id="modal-title">Título</h3>
+                <button onclick="ui.closeModal()" class="modal-close"><i class="ph ph-x"></i></button>
+            </div>
+            <div id="modal-content" class="modal-body"></div>
+        </div>
+    </div>
+
+    <!-- Core App Logic -->
+    <script type="module" src="assets/js/app.js"></script>
+</body>
+
+</html>
