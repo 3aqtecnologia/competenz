@@ -115,9 +115,40 @@ export const planejamento = {
         return courses.map(c => {
             const matricesCount = app.state.matrices.filter(m => m.curso_id === c.id).length;
             const activeMatrix = app.state.matrices.find(m => m.curso_id === c.id && m.status === 'Ativa');
-            const totalCH = activeMatrix
-                ? '??h' // Could fetch matrix total CH if linked
-                : 'Definir';
+
+            // Calculate Active Matrix Workload
+            let chMatriz = 0;
+            if (activeMatrix && app.state.allUCs) {
+                chMatriz = app.state.allUCs
+                    .filter(u => u.matriz_id === activeMatrix.id)
+                    .reduce((acc, curr) => acc + (curr.carga_horaria || 0), 0);
+            }
+
+            const chCurso = c.carga_horaria || 0;
+
+            // Determine Relation & Styling
+            let relationHtml = '';
+            if (activeMatrix) {
+                const diff = chMatriz - chCurso;
+                let colorClass = 'text-gray-500';
+                let icon = '';
+
+                if (chCurso > 0) {
+                    if (diff === 0) {
+                        colorClass = 'text-green-600 font-bold';
+                        icon = '<i class="ph-bold ph-check"></i>';
+                    } else if (Math.abs(diff) < chCurso * 0.05) { // 5% tolerance
+                        colorClass = 'text-yellow-600 font-bold';
+                        icon = '<i class="ph-bold ph-warning"></i>';
+                    } else {
+                        colorClass = 'text-red-500 font-bold';
+                        icon = '<i class="ph-bold ph-warning-circle"></i>';
+                    }
+                }
+                relationHtml = `<span class="${colorClass} ml-1" title="Carga Horária da Matriz: ${chMatriz}h">${icon} ${chMatriz}h / ${chCurso}h</span>`;
+            } else {
+                relationHtml = `<span class="text-gray-400">Sem matriz ativa</span>`;
+            }
 
             return `
             <div class="token-item group" onclick="app.planejamento.openModalCurso('${c.id}')">
@@ -127,10 +158,11 @@ export const planejamento = {
                 <div class="token-info">
                     <div class="token-name">${c.nome}</div>
                     <div class="token-meta">
-                        <span>${c.area_tecnologica}</span>
+                        ${c.area_tecnologica}
                         <span style="margin: 0 6px;">•</span>
-                        ${matricesCount} Matrizes
-                        ${activeMatrix ? `<span class="text-success font-bold ml-1">• ${activeMatrix.codigo} Ativa</span>` : ''}
+                        ${relationHtml}
+                        <span style="margin: 0 6px;">•</span>
+                        ${matricesCount} Versões
                     </div>
                 </div>
                 <div class="flex items-center gap-3">

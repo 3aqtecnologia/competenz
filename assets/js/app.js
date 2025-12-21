@@ -38,12 +38,13 @@ class App {
         this.state.isLoading = true;
         try {
             console.log('Fetching global data...');
-            const [c, m, d, t, a] = await Promise.all([
+            const [c, m, d, t, a, u] = await Promise.all([
                 supabase.from('cursos').select('*'),
                 supabase.from('matrizes').select('*, cursos(nome)'),
                 supabase.from('docentes').select('*'),
                 supabase.from('turmas').select('*, cursos(nome), matrizes(codigo)'),
-                supabase.from('areas_tecnologicas').select('*').eq('ativo', true).order('nome')
+                supabase.from('areas_tecnologicas').select('*').eq('ativo', true).order('nome'),
+                supabase.from('unidades_curriculares').select('id, matriz_id, carga_horaria') // Lite fetch for calcs
             ]);
 
             this.state.courses = c.data || [];
@@ -51,6 +52,7 @@ class App {
             this.state.teachers = d.data || [];
             this.state.classes = t.data || [];
             this.state.areasTecnologicas = a.data || [];
+            this.state.allUCs = u.data || [];
 
             console.log('Data loaded:', this.state);
         } catch (error) {
