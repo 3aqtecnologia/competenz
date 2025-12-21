@@ -2,6 +2,7 @@
 import { supabase } from './services/supabase.js';
 import { renderDashboard } from './modules/dashboard.js';
 import { planejamento } from './modules/planejamento.js';
+import { matrizesView } from './modules/matrizesView.js';
 // import { secretaria } from './modules/secretaria.js'; // Will enable later
 // import { pedagogico } from './modules/pedagogico.js'; // Will enable later
 import { ui } from './utils/ui.js';
@@ -21,6 +22,8 @@ class App {
 
         // Modules Registry
         this.planejamento = planejamento;
+        // this.matrizes = matrizes; // (Service)
+        this.matrizesView = matrizesView; // (UI Controller)
         this.dashboard = { render: renderDashboard }; // Adapter
 
         // Expose UI helper globally for HTML onclick events
@@ -38,13 +41,12 @@ class App {
         this.state.isLoading = true;
         try {
             console.log('Fetching global data...');
-            const [c, m, d, t, a, u] = await Promise.all([
+            const [c, m, d, t, a] = await Promise.all([
                 supabase.from('cursos').select('*'),
-                supabase.from('matrizes').select('*, cursos(nome)'),
+                supabase.from('matrizes').select('*'), // Removed outdated join
                 supabase.from('docentes').select('*'),
                 supabase.from('turmas').select('*, cursos(nome), matrizes(codigo)'),
-                supabase.from('areas_tecnologicas').select('*').eq('ativo', true).order('nome'),
-                supabase.from('unidades_curriculares').select('id, matriz_id, carga_horaria') // Lite fetch for calcs
+                supabase.from('areas_tecnologicas').select('*').eq('ativo', true).order('nome')
             ]);
 
             this.state.courses = c.data || [];
@@ -52,7 +54,7 @@ class App {
             this.state.teachers = d.data || [];
             this.state.classes = t.data || [];
             this.state.areasTecnologicas = a.data || [];
-            this.state.allUCs = u.data || [];
+            // this.state.allUCs removed (was using deprecated relation for calc)
 
             console.log('Data loaded:', this.state);
         } catch (error) {

@@ -19,7 +19,11 @@ export const planejamento = {
                 <div class="tab-pills">
                     <button onclick="app.planejamento.switchTab('cursos')" 
                         class="tab-pill ${this.currentTab === 'cursos' ? 'active' : ''}">
-                        <i class="ph ph-books"></i> Cursos & Matrizes
+                        <i class="ph ph-graduation-cap"></i> Cursos
+                    </button>
+                    <button onclick="app.planejamento.switchTab('matrizes')" 
+                        class="tab-pill ${this.currentTab === 'matrizes' ? 'active' : ''}">
+                        <i class="ph ph-file-text"></i> Matrizes
                     </button>
                     <button onclick="app.planejamento.switchTab('docentes')" 
                          class="tab-pill ${this.currentTab === 'docentes' ? 'active' : ''}">
@@ -45,11 +49,12 @@ export const planejamento = {
 
     renderTabContent(state) {
         switch (this.currentTab) {
-            case 'cursos': return this.renderCursosMatrizes(state);
+            case 'cursos': return this.renderCursos(state);
+            case 'matrizes': return this.renderMatrizes(state);
             case 'docentes': return this.renderDocentes(state);
             case 'turmas': return this.renderTurmas(state);
             case 'ucs': return this.renderUCs(state);
-            default: return this.renderCursosMatrizes(state);
+            default: return this.renderCursos(state);
         }
     },
 
@@ -71,16 +76,16 @@ export const planejamento = {
     },
 
     /* ==========================================================================================
-       TAB 1: GESTÃO DE CURSOS E MATRIZES (COMPLETO)
+       TAB 1: GESTÃO DE CURSOS
        ========================================================================================== */
-    renderCursosMatrizes(state) {
+    renderCursos(state) {
         return `
             <div class="animate-fade-in">
                 <!-- Header & Actions -->
                 <div class="flex-between" style="margin-bottom: 2rem;">
                     <div>
                          <h3 class="input-label" style="font-size: 1.25rem; margin-bottom: 0.25rem;">Portfólio de Cursos</h3>
-                         <p class="token-meta">Gerencie os cursos ofertados e suas estruturas curriculares</p>
+                         <p class="token-meta">Gerencie os cursos ofertados na instituição</p>
                     </div>
                     <button onclick="app.planejamento.openModalCurso()" class="btn btn-primary">
                         <i class="ph ph-graduation-cap"></i> Novo Curso
@@ -109,26 +114,114 @@ export const planejamento = {
         `;
     },
 
+    /* ==========================================================================================
+       TAB 1.5: GESTÃO DE MATRIZES
+       ========================================================================================== */
+    renderMatrizes(state) {
+        // Prepare list (flat list of matrices with course name)
+        const matricesWithCourse = state.matrices.map(m => {
+            const linkedCourses = state.courses.filter(c => c.matriz_id === m.id);
+            const courseNames = linkedCourses.length
+                ? linkedCourses.map(c => c.nome).join(', ')
+                : 'Não vinculada';
+
+            return {
+                ...m,
+                curso_nome: courseNames,
+                linked_count: linkedCourses.length
+            };
+        }).sort((a, b) => b.created_at.localeCompare(a.created_at));
+
+        return `
+            <div class="animate-fade-in">
+                 <div class="flex-between" style="margin-bottom: 2rem;">
+                    <div>
+                         <h3 class="input-label" style="font-size: 1.25rem; margin-bottom: 0.25rem;">Matrizes Curriculares</h3>
+                         <p class="token-meta">Todas as versões de currículos cadastradas</p>
+                    </div>
+                    <button onclick="app.matrizesView.openModal()" class="btn btn-primary">
+                        <i class="ph ph-plus-circle"></i> Nova Matriz
+                    </button>
+                </div>
+
+                 <!-- Filters -->
+                <div class="card" style="padding: 1rem; margin-bottom: 1.5rem; display: flex; gap: 1rem;">
+                    <div style="flex: 1; position: relative;">
+                        <i class="ph ph-magnifying-glass" style="position: absolute; left: 1rem; top: 1rem; color: #94a3b8;"></i>
+                        <input id="matriz-search" onkeyup="app.planejamento.filterMatrizes()" class="input-field" style="padding-left: 2.5rem;" placeholder="Buscar matriz por código ou curso...">
+                    </div>
+                </div>
+
+                <div id="matrizes-list-container" class="token-list">
+                    ${this.renderMatrizesListItems(matricesWithCourse)}
+                </div>
+            </div>
+        `;
+    },
+
+    renderMatrizesListItems(list) {
+        if (!list || list.length === 0) return ux.renderEmptyState('Nenhuma matriz encontrada.');
+
+        return list.map(m => `
+            <div class="token-item group" onclick="app.matrizesView.openModal('${m.id}')">
+                <div class="token-icon yellow" style="font-size: 1.1rem;">
+                    <i class="ph ph-file-text"></i>
+                </div>
+                 <div class="token-info">
+                    <div class="token-name">${m.codigo}</div>
+                    <div class="token-meta">
+                        ${m.curso_nome}
+                        <span style="margin: 0 6px;">•</span>
+                        <span class="text-gray-700 font-medium bg-gray-100 px-1.5 py-0.5 rounded text-xs">
+                            <i class="ph-bold ph-clock"></i> ${m.carga_horaria_total || 0}h
+                        </span>
+                        <span style="margin: 0 6px;">•</span>
+                        ${window.dayjs(m.created_at).format('DD/MM/YYYY')}
+                    </div>
+                </div>
+                 <div class="flex items-center gap-3">
+                    <div class="badge ${m.status === 'Ativa' ? 'badge-success' : 'badge-neutral'}">${m.status}</div>
+                    <i class="ph ph-caret-right text-gray-300 group-hover:text-primary transition-colors"></i>
+                </div>
+            </div>
+        `).join('');
+    },
+
+    filterMatrizes() {
+        const term = document.getElementById('matriz-search').value.toLowerCase();
+
+        const visible = app.state.matrices.map(m => {
+            const linkedCourses = app.state.courses.filter(c => c.matriz_id === m.id);
+            const courseNames = linkedCourses.length
+                ? linkedCourses.map(c => c.nome).join(', ')
+                : 'Não vinculada';
+            return {
+                ...m,
+                curso_nome: courseNames
+            };
+        }).filter(m => {
+            return m.codigo.toLowerCase().includes(term) || m.curso_nome.toLowerCase().includes(term);
+        });
+
+        document.getElementById('matrizes-list-container').innerHTML = this.renderMatrizesListItems(visible);
+    },
+
     renderCursosListItems(courses) {
         if (!courses || courses.length === 0) return ux.renderEmptyState('Nenhum curso encontrado.');
 
         return courses.map(c => {
-            const matricesCount = app.state.matrices.filter(m => m.curso_id === c.id).length;
-            const activeMatrix = app.state.matrices.find(m => m.curso_id === c.id && m.status === 'Ativa');
+            // Get the linked matrix for this course
+            const linkedMatriz = c.matriz_id
+                ? app.state.matrices.find(m => m.id === c.matriz_id)
+                : null;
 
-            // Calculate Active Matrix Workload
-            let chMatriz = 0;
-            if (activeMatrix && app.state.allUCs) {
-                chMatriz = app.state.allUCs
-                    .filter(u => u.matriz_id === activeMatrix.id)
-                    .reduce((acc, curr) => acc + (curr.carga_horaria || 0), 0);
-            }
-
+            // Calculate Matrix Workload
+            const chMatriz = linkedMatriz?.carga_horaria_total || 0;
             const chCurso = c.carga_horaria || 0;
 
             // Determine Relation & Styling
             let relationHtml = '';
-            if (activeMatrix) {
+            if (linkedMatriz) {
                 const diff = chMatriz - chCurso;
                 let colorClass = 'text-gray-500';
                 let icon = '';
@@ -145,9 +238,16 @@ export const planejamento = {
                         icon = '<i class="ph-bold ph-warning-circle"></i>';
                     }
                 }
-                relationHtml = `<span class="${colorClass} ml-1" title="Carga Horária da Matriz: ${chMatriz}h">${icon} ${chMatriz}h / ${chCurso}h</span>`;
+                relationHtml = `
+                    <span class="text-xs font-semibold text-gray-700 bg-gray-100 px-2 py-0.5 rounded ml-2" title="Matriz Vinculada">
+                        <i class="ph ph-link text-gray-400"></i> ${linkedMatriz.codigo}
+                    </span>
+                    <span class="${colorClass} ml-1" title="Carga Horária: Matriz vs Curso">
+                        ${icon} ${chMatriz}h / ${chCurso}h
+                    </span>
+                `;
             } else {
-                relationHtml = `<span class="text-gray-400">Sem matriz ativa</span>`;
+                relationHtml = `<span class="text-gray-400">Sem matriz vinculada</span>`;
             }
 
             return `
@@ -161,8 +261,6 @@ export const planejamento = {
                         ${c.area_tecnologica}
                         <span style="margin: 0 6px;">•</span>
                         ${relationHtml}
-                        <span style="margin: 0 6px;">•</span>
-                        ${matricesCount} Versões
                     </div>
                 </div>
                 <div class="flex items-center gap-3">
@@ -607,24 +705,16 @@ export const planejamento = {
     // --- CURSO MANAGER (DETAILS & MATRICES) ---
     async openModalCurso(id = null) {
         const curso = id ? app.state.courses.find(c => c.id === id) : null;
-        let cursoMatrices = [];
 
-        if (id) {
-            cursoMatrices = app.state.matrices.filter(m => m.curso_id === id).sort((a, b) => b.created_at.localeCompare(a.created_at));
-        }
+        // Get the linked matrix for this course (if any)
+        const linkedMatriz = curso?.matriz_id
+            ? app.state.matrices.find(m => m.id === curso.matriz_id)
+            : null;
+
+        // Get all available matrices for selection
+        const allMatrices = app.state.matrices || [];
 
         const areas = app.state.areasTecnologicas;
-
-        const matricesListHtml = cursoMatrices.length ? cursoMatrices.map(m => `
-            <div class="token-item p-3 mb-2" onclick="app.planejamento.openModalMatriz('${m.id}')">
-                <div class="token-icon yellow" style="width: 36px; height: 36px; font-size: 1.1rem;"><i class="ph ph-file-text"></i></div>
-                <div class="token-info">
-                    <div class="token-name text-sm">${m.codigo}</div>
-                    <div class="token-meta text-xs">${window.dayjs(m.created_at).format('DD/MM/YYYY')} • ${m.status}</div>
-                </div>
-                <i class="ph ph-pencil-simple text-gray-400"></i>
-            </div>
-        `).join('') : '<div class="text-center text-sm text-gray-400 py-4">Nenhuma matriz curricular cadastrada para este curso.</div>';
 
         ui.openModalWindow(curso ? 'Gerenciar Curso' : 'Novo Curso', `
             <div class="animate-fade-in">
@@ -648,30 +738,57 @@ export const planejamento = {
                             <input name="carga_horaria" type="number" class="input-field" required value="${curso?.carga_horaria || ''}" placeholder="Ex: 1200">
                         </div>
                         <div class="input-group">
-                             <label class="input-label">Status</label>
-                             <select name="status" class="input-field">
+                            <label class="input-label">Status</label>
+                            <select name="status" class="input-field">
                                 <option value="Ativo" ${curso?.status === 'Ativo' ? 'selected' : ''}>Ativo</option>
                                 <option value="Inativo" ${curso?.status === 'Inativo' ? 'selected' : ''}>Inativo</option>
                             </select>
                         </div>
                     </div>
+                    
+                    <div class="input-group">
+                        <label class="input-label">Matriz Curricular</label>
+                        <div class="flex gap-2">
+                            <select name="matriz_id" class="input-field" style="flex: 1;">
+                                <option value="">Nenhuma matriz vinculada</option>
+                                ${allMatrices.map(m => `<option value="${m.id}" ${curso?.matriz_id === m.id ? 'selected' : ''}>${m.codigo}</option>`).join('')}
+                            </select>
+                        </div>
+                        <small class="text-xs text-gray-500 mt-1">
+                            ${linkedMatriz
+                ? `Matriz atual: <strong>${linkedMatriz.codigo}</strong> • ${linkedMatriz.carga_horaria_total || 0}h`
+                : 'Selecione uma matriz curricular para este curso'}
+                        </small>
+                    </div>
+                    
                     <div class="mt-4">
                         <button type="submit" class="btn btn-primary w-full">
-                            <i class="ph ph-check"></i> ${curso ? 'Atualizar Dados do Curso' : 'Criar Curso'}
+                            <i class="ph ph-check"></i> ${curso ? 'Atualizar Curso' : 'Criar Curso'}
                         </button>
                     </div>
                 </form>
 
-                ${id ? `
+                ${linkedMatriz ? `
                     <div style="border-top: 1px solid var(--border); padding-top: 1.5rem;">
-                        <div class="flex-between mb-4">
-                            <h4 class="font-bold text-gray-800">Matrizes Curriculares</h4>
-                            <button type="button" onclick="app.planejamento.openModalMatriz(null, '${id}')" class="btn btn-secondary text-xs py-2">
-                                <i class="ph ph-plus"></i> Nova Matriz/Versão
+                        <div class="flex-between mb-3">
+                            <h4 class="font-bold text-gray-800">Matriz Vinculada</h4>
+                            <button type="button" onclick="app.matrizesView.openModal('${linkedMatriz.id}')" class="btn btn-secondary text-xs py-2">
+                                <i class="ph ph-pencil-simple"></i> Editar Matriz
                             </button>
                         </div>
-                        <div style="max-height: 200px; overflow-y: auto;">
-                            ${matricesListHtml}
+                        <div class="card p-4">
+                            <div class="flex items-center gap-3 mb-3">
+                                <div class="token-icon yellow" style="width: 48px; height: 48px; font-size: 1.3rem;">
+                                    <i class="ph ph-file-text"></i>
+                                </div>
+                                <div>
+                                    <div class="font-bold text-lg">${linkedMatriz.codigo}</div>
+                                    <div class="text-sm text-gray-500">Carga Horária: ${linkedMatriz.carga_horaria_total || 0}h</div>
+                                </div>
+                            </div>
+                            <div class="text-xs text-gray-400">
+                                Criada em ${window.dayjs(linkedMatriz.created_at).format('DD/MM/YYYY')}
+                            </div>
                         </div>
                     </div>
                 ` : ''}
@@ -685,226 +802,40 @@ export const planejamento = {
             nome: e.target.nome.value,
             area_tecnologica: e.target.area.value,
             status: e.target.status.value,
-            carga_horaria: parseInt(e.target.carga_horaria.value) || 0
+            carga_horaria: parseInt(e.target.carga_horaria.value) || 0,
+            matriz_id: e.target.matriz_id.value || null
         };
 
-        const { error } = id
-            ? await supabase.from('cursos').update(data).eq('id', id)
-            : await supabase.from('cursos').insert({ ...data, status: 'Ativo' });
-
-        if (error) ui.toast(error.message, 'error');
-        else { ui.toast('Curso salvo!'); ui.closeModal(); app.refreshCurrentView(); }
-    },
-
-    // --- MATRIZ EDITOR (UCS & CATALOG IMPORT) ---
-    async openModalMatriz(id = null, parentCursoId = null) {
-        let m = null, ucs = [];
-        let cursoId = parentCursoId;
-        let totalPrevisto = 0;
-
-        // Load Matrix & Grade
-        if (id) {
-            const { data } = await supabase.from('matrizes').select('*').eq('id', id).single();
-            m = data;
-            cursoId = m.curso_id;
-            const resUCs = await supabase.from('unidades_curriculares').select('*').eq('matriz_id', id).order('created_at');
-            ucs = resUCs.data || [];
-        }
-
-        // Load Course Info (Target Hours)
-        if (cursoId) {
-            const { data: c } = await supabase.from('cursos').select('carga_horaria').eq('id', cursoId).single();
-            if (c) totalPrevisto = c.carga_horaria || 0;
-        }
-
-        const totalAtual = ucs.reduce((acc, u) => acc + u.carga_horaria, 0);
-        const progressPercent = totalPrevisto > 0 ? Math.min((totalAtual / totalPrevisto) * 100, 100) : 0;
-        const progressColor = totalAtual > totalPrevisto ? 'bg-red-500' : (totalAtual === totalPrevisto ? 'bg-green-500' : 'bg-primary');
-
-        // Load Catalog for Picker
-        const { data: catalog } = await supabase.from('catalogo_ucs').select('*').order('nome');
-
-        // Helper
-        const isAdded = (catUc) => ucs.some(u => u.nome === catUc.nome);
-
-        // Grade List (Left)
-        const uiUCs = ucs.map(u => `
-            <div class="flex items-center justify-between p-2 mb-2 bg-gray-50 rounded border border-gray-100 group">
-                <div>
-                   <div class="text-sm font-bold text-gray-800">${u.nome}</div>
-                   <div class="text-xs text-gray-500">${u.carga_horaria}h • ${u.tipo || 'N/A'}</div>
-                </div>
-                <button onclick="app.planejamento.deleteUC('${u.id}', '${id}')" class="text-red-400 hover:text-red-600 p-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <i class="ph ph-trash"></i>
-                </button>
-            </div>
-        `).join('') || '<div class="text-xs text-gray-400 text-center py-4">Nenhuma UC na grade.</div>';
-
-        // Picker List (Right)
-        const pickerHtml = (id && catalog) ? catalog.map(c => {
-            const added = isAdded(c);
-            return `
-                <div class="uc-picker-item ${added ? 'added' : ''}" onclick="${added ? '' : `app.planejamento.importUCFromCatalog('${c.id}', '${id}')`}">
-                    <div style="flex:1;">
-                        <div class="text-sm font-semibold" style="color: ${added ? '#15803d' : '#334155'}">${c.nome}</div>
-                        <div class="text-xs text-gray-500">${c.carga_horaria}h • ${c.tipo || '-'}</div>
-                    </div>
-                    ${added
-                    ? '<i class="ph ph-check-circle text-green-500"></i>'
-                    : '<i class="ph ph-plus-circle text-primary hover:scale-110 transition-transform text-lg"></i>'
-                }
-                </div>
-             `;
-        }).join('') : '<div class="p-4 text-center text-gray-400 text-sm">Salve a matriz para buscar UCs.</div>';
-
-        ui.openModalWindow(id ? `Editor de Matriz: ${m.codigo}` : 'Nova Matriz Curricular', `
-             <div class="animate-fade-in" style="height: 100%; display: flex; flex-direction: column;">
-                
-                <!-- Matrix Meta Form (Top) -->
-                <form onsubmit="app.planejamento.saveMatriz(event, '${id || ''}', '${cursoId}')" class="mb-4 bg-gray-50 p-4 rounded-xl border border-gray-100 shrink-0">
-                    <div class="grid-2">
-                        <div class="input-group mb-0">
-                            <label class="input-label">Código da Versão</label>
-                            <input name="codigo" class="input-field" required value="${m?.codigo || ''}" placeholder="Ex: V1.2024">
-                        </div>
-                         <div class="input-group mb-0">
-                            <div class="flex gap-2 items-end">
-                                <div style="flex:1;">
-                                     <label class="input-label">Status</label>
-                                     <select name="status" class="input-field">
-                                         <option value="Ativa" ${m?.status === 'Ativa' ? 'selected' : ''}>Ativa</option>
-                                         <option value="Inativa" ${m?.status === 'Inativa' ? 'selected' : ''}>Inativa</option>
-                                     </select>
-                                </div>
-                                <button type="submit" class="btn btn-primary h-[42px] px-6">Salvar</button>
-                            </div>
-                        </div>
-                    </div>
-                </form>
-
-                <!-- Dual Columns: Grade & Picker -->
-                <div class="grid-2 gap-6" style="flex:1; min-height: 0; align-items: stretch;">
-                    
-                    <!-- Left: Grade -->
-                    <div class="flex flex-col h-full bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-                        <div class="p-3 bg-gray-50 border-b border-gray-200">
-                            <div class="flex-between mb-2">
-                                <span class="font-bold text-gray-700 text-sm">Grade Curricular</span>
-                                <span class="badge badge-neutral text-xs">${ucs.length} UCs</span>
-                            </div>
-                            <!-- Progress Bar -->
-                            ${totalPrevisto > 0 ? `
-                                <div class="w-full bg-gray-200 rounded-full h-1.5 mb-1">
-                                    <div class="${progressColor} h-1.5 rounded-full" style="width: ${progressPercent}%"></div>
-                                </div>
-                                <div class="flex-between text-[10px] font-medium uppercase tracking-wider">
-                                    <span class="${totalAtual > totalPrevisto ? 'text-red-500' : 'text-gray-600'}">Atual: ${totalAtual}h</span>
-                                    <span class="text-gray-400">Meta: ${totalPrevisto}h</span>
-                                </div>
-                            ` : `<div class="text-[10px] text-gray-400 text-center">Defina a carga horária do curso para ver o progresso.</div>`}
-                        </div>
-
-                        <div class="flex-1 overflow-y-auto p-2">
-                            ${uiUCs}
-                        </div>
-                        <div class="p-2 bg-gray-50 border-t border-gray-200 text-center text-xs font-bold text-gray-500">
-                            Total: ${totalAtual} Horas
-                        </div>
-                    </div>
-
-                    <!-- Right: Catalog Picker -->
-                     <div class="flex flex-col h-full bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-                        <div class="p-3 bg-indigo-50 border-b border-indigo-100 flex-between">
-                            <span class="font-bold text-indigo-700 text-sm">Banco de UCs (Catálogo)</span>
-                            <i class="ph ph-books text-indigo-400"></i>
-                        </div>
-                        <div class="p-2 border-b border-gray-100">
-                             <input id="picker-search" class="input-field text-sm py-1" placeholder="Filtrar catálogo..." 
-                                onkeyup="const t=this.value.toLowerCase(); document.querySelectorAll('.uc-picker-item').forEach(el => el.style.display = el.textContent.toLowerCase().includes(t) ? 'flex' : 'none')">
-                        </div>
-                        <div class="flex-1 overflow-y-auto p-0">
-                            ${pickerHtml}
-                        </div>
-                    </div>
-
-                </div>
-            </div>
-        `, 'modal-lg');
-    },
-
-    // --- CATALOG SEARCH & ADD HELPER ---
-    async searchCatalogForMatrix(query, matrizId) {
-        const resultsContainer = document.getElementById(`catalog-results-${matrizId}`);
-        if (query.length < 2) {
-            resultsContainer.classList.add('hidden');
+        // Validate: Active course MUST have a matrix
+        if (data.status === 'Ativo' && !data.matriz_id) {
+            ui.toast('Para ativar o curso, selecione uma Matriz Curricular. Ou salve como "Inativo".', 'error');
             return;
         }
 
-        const { data: results } = await supabase.from('catalogo_ucs').select('*').ilike('nome', `%${query}%`).limit(5);
+        try {
+            const { error } = id
+                ? await supabase.from('cursos').update(data).eq('id', id)
+                : await supabase.from('cursos').insert(data);
 
-        if (!results || results.length === 0) {
-            resultsContainer.innerHTML = '<div class="p-3 text-xs text-gray-500">Nenhuma UC encontrada no catálogo.</div>';
+            if (error) throw error;
+
+            ui.toast('Curso salvo!');
+            ui.closeModal();
+            app.refreshCurrentView();
+        } catch (error) {
+            ui.toast(error.message, 'error');
+        }
+    },
+
+    // --- MATRIZ EDITOR (UCS & CATALOG IMPORT) ---
+    // --- DELEGATE TO MATRIZES VIEW MODULE ---
+    openModalMatriz(id, cursoId) {
+        if (app.matrizesView) {
+            app.matrizesView.openModal(id, cursoId);
         } else {
-            resultsContainer.innerHTML = results.map(r => `
-                <div class="p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 flex justify-between items-center" 
-                     onclick="app.planejamento.importUCFromCatalog('${r.id}', '${matrizId}')">
-                    <div>
-                        <div class="font-bold text-sm text-gray-800">${r.nome}</div>
-                        <div class="text-xs text-gray-500">${r.area_tecnologica} • ${r.carga_horaria}h</div>
-                    </div>
-                    <i class="ph ph-plus-circle text-primary"></i>
-                </div>
-            `).join('');
+            console.error('Módulo matrizesView não carregado');
+            ui.toast('Erro interno: Módulo de matrizes não carregado', 'error');
         }
-        resultsContainer.classList.remove('hidden');
-    },
-
-    async importUCFromCatalog(catalogId, matrizId) {
-        // Fetch raw catalog entry
-        const { data: source } = await supabase.from('catalogo_ucs').select('*').eq('id', catalogId).single();
-        if (!source) return;
-
-        // Clone FULL data to local matrix UC table
-        const { error } = await supabase.from('unidades_curriculares').insert({
-            matriz_id: matrizId,
-            nome: source.nome,
-            area_tecnologica: source.area_tecnologica, // Keeps Array format
-            carga_horaria: source.carga_horaria,
-            objetivo: source.objetivo,
-            bibliografia_basica: source.bibliografia_basica,
-            conhecimentos: source.conhecimentos,
-            capacidades_tecnicas: source.capacidades_tecnicas,
-            capacidades_sociais: source.capacidades_sociais,
-            capacidades_socioemocionais: source.capacidades_socioemocionais
-        });
-
-        if (error) ui.toast('Erro ao importar UC: ' + error.message, 'error');
-        else {
-            ui.toast('UC adicionada à grade com sucesso.');
-            this.openModalMatriz(matrizId); // Refresh modal content
-        }
-    },
-
-    async saveMatriz(e, id, cursoId) {
-        e.preventDefault();
-        const data = { curso_id: cursoId, codigo: e.target.codigo.value, status: e.target.status.value };
-
-        const { data: res, error } = id
-            ? await supabase.from('matrizes').update(data).eq('id', id).select().single()
-            : await supabase.from('matrizes').insert(data).select().single();
-
-        if (error) ui.toast(error.message, 'error');
-        else {
-            ui.toast('Matriz salva!');
-            if (!id) { ui.closeModal(); setTimeout(() => this.openModalMatriz(res.id), 300); }
-            else { app.refreshCurrentView(); this.openModalMatriz(res.id); }
-        }
-    },
-
-    async deleteUC(ucId, matrizId) {
-        if (!confirm('Excluir UC da grade?')) return;
-        await supabase.from('unidades_curriculares').delete().eq('id', ucId);
-        this.openModalMatriz(matrizId);
     },
 
     // --- DOCENTE LISTENER ---
