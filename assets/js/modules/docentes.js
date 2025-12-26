@@ -77,5 +77,23 @@ export const docentes = {
     async delete(id) {
         const { error } = await supabase.from('docentes').delete().eq('id', id);
         if (error) throw error;
+    },
+
+    async uploadPhoto(file) {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
+        const filePath = `${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+            .from('docentes-fotos')
+            .upload(filePath, file);
+
+        if (uploadError) throw uploadError;
+
+        const { data } = supabase.storage
+            .from('docentes-fotos')
+            .getPublicUrl(filePath);
+
+        return data.publicUrl;
     }
 };

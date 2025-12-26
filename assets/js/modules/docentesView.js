@@ -91,8 +91,9 @@ export const docentesView = {
 
             return `
             <div class="token-item group" onclick="app.docentesView.openModal('${d.id}')">
-                <div class="token-icon indigo" style="font-size: 1.1rem;">
-                    <i class="ph ph-user"></i>
+                <div class="token-icon overflow-hidden">
+                    <img src="${d.foto_url || 'https://ui-avatars.com/api/?name=' + (d.nome || 'Docente') + '&background=random'}" 
+                         alt="${d.nome}" class="w-full h-full object-cover">
                 </div>
                 <div class="token-info">
                     <div class="token-name">${d.nome}</div>
@@ -177,7 +178,27 @@ export const docentesView = {
                         <div id="tab-perfil" class="modal-tab-content block animate-fade-in">
                              <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
                                 <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 border-b border-slate-100 pb-2">Identificação Pessoal</h4>
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <input type="hidden" name="current_foto_url" value="${d.foto_url || ''}">
+                                <div class="flex flex-col md:flex-row gap-6">
+                                    <!-- Photo Upload -->
+                                    <div class="flex-shrink-0 flex justify-center md:justify-start">
+                                        <div class="relative group">
+                                            <div class="w-32 h-32 rounded-full border-4 border-slate-100 shadow-sm overflow-hidden bg-slate-50 relative">
+                                                <img id="preview-foto" src="${d.foto_url || 'https://ui-avatars.com/api/?name=' + (d.nome || 'Docente') + '&background=random'}" class="w-full h-full object-cover">
+                                                
+                                                <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer text-white">
+                                                    <i class="ph ph-camera text-2xl"></i>
+                                                </div>
+                                            </div>
+                                            <label class="absolute bottom-0 right-0 bg-white border border-slate-200 p-2 rounded-full cursor-pointer shadow-md hover:bg-slate-50 transition-colors">
+                                                <i class="ph-bold ph-pencil-simple text-slate-600"></i>
+                                                <input type="file" id="foto-input" accept="image/*" class="hidden" onchange="app.docentesView.previewPhoto(this)">
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <!-- Personal Inputs -->
+                                    <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div class="input-group mb-0">
                                         <label class="input-label">CPF</label>
                                         <input name="cpf" class="input-field" value="${this.masks.cpf(d.cpf || '')}" onkeyup="this.value = app.docentesView.masks.cpf(this.value)" placeholder="000.000.000-00" maxlength="14">
@@ -186,17 +207,22 @@ export const docentesView = {
                                         <label class="input-label">Email</label>
                                         <input type="email" name="email" class="input-field" value="${d.email || ''}" placeholder="email@exemplo.com">
                                     </div>
-                                    <div class="input-group mb-0 relative">
+                                    <div class="input-group mb-0">
                                         <label class="input-label">Telefone</label>
-                                        <input name="telefone" class="input-field pr-24" value="${this.masks.phone(d.telefone || '')}" onkeyup="this.value = app.docentesView.masks.phone(this.value)" placeholder="(00) 00000-0000">
-                                        
-                                        <!-- Custom Toggle Switch Component -->
-                                        ${ui.SwitchField({
+                                        <input name="telefone" class="input-field" value="${this.masks.phone(d.telefone || '')}" onkeyup="this.value = app.docentesView.masks.phone(this.value)" placeholder="(00) 00000-0000">
+                                    </div>
+                                    <div class="input-group mb-0 flex flex-col justify-center">
+                                        <label class="input-label mb-2">WhatsApp?</label>
+                                        <div class="flex items-center gap-3">
+                                            ${ui.SwitchField({
             name: 'whatsapp',
             checked: d.whatsapp,
-            title: 'É WhatsApp?',
-            className: 'absolute top-[35px] right-3'
-        })}         </div>
+            title: 'Marque se este número possui WhatsApp'
+        })}
+                                            <span class="text-sm text-slate-500">Sim, possui WhatsApp</span>
+                                        </div>
+                                    </div>
+                                </div>
                                 </div>
                             </div>
                         </div>
@@ -290,6 +316,16 @@ export const docentesView = {
         `, 'modal-lg');
     },
 
+    previewPhoto(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                document.getElementById('preview-foto').src = e.target.result;
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    },
+
     async save(e, id) {
         e.preventDefault();
         const f = e.target;
@@ -309,12 +345,27 @@ export const docentesView = {
                 selectedAreas.push(cb.value);
             });
 
+            // Handle Photo Upload
+            const photoInput = document.getElementById('foto-input');
+            let fotoUrl = formData.get('current_foto_url');
+
+            if (photoInput.files && photoInput.files[0]) {
+                const toastId = ui.toast('Enviando foto...', 'info'); // Simplified toast usage
+                try {
+                    fotoUrl = await app.docentes.uploadPhoto(photoInput.files[0]);
+                } catch (err) {
+                    console.error('Photo upload failed:', err);
+                    ui.toast('Erro ao enviar foto, salvando sem foto nova.', 'warning');
+                }
+            }
+
             const data = {
                 nome: formData.get('nome'),
                 cpf: formData.get('cpf').replace(/\D/g, ''), // Remove formatting chars (dots, bash)
                 email: formData.get('email'),
                 telefone: formData.get('telefone').replace(/\D/g, ''), // Remove formatting chars (parentheses, dash)
                 whatsapp: f.whatsapp?.checked || false,
+                foto_url: fotoUrl,
                 nivel: formData.get('nivel'),
                 area_formacao: formData.get('area_formacao'),
                 vinculo: formData.get('vinculo'),
