@@ -3,8 +3,8 @@ import { supabase } from './services/supabase.js';
 import { renderDashboard } from './modules/dashboard.js';
 import { planejamento } from './modules/planejamento.js';
 import { matrizesView } from './modules/matrizesView.js';
-// import { secretaria } from './modules/secretaria.js'; // Will enable later
-// import { pedagogico } from './modules/pedagogico.js'; // Will enable later
+import { docentes } from './modules/docentes.js';
+import { docentesView } from './modules/docentesView.js';
 import { ui } from './utils/ui.js';
 
 class App {
@@ -24,6 +24,8 @@ class App {
         this.planejamento = planejamento;
         // this.matrizes = matrizes; // (Service)
         this.matrizesView = matrizesView; // (UI Controller)
+        this.docentes = docentes;
+        this.docentesView = docentesView;
         this.dashboard = { render: renderDashboard }; // Adapter
 
         // Expose UI helper globally for HTML onclick events
@@ -44,7 +46,14 @@ class App {
             const [c, m, d, t, a] = await Promise.all([
                 supabase.from('cursos').select('*'),
                 supabase.from('matrizes').select('*'), // Removed outdated join
-                supabase.from('docentes').select('*'),
+                // Fetch Docentes with Areas Relation
+                supabase.from('docentes').select(`
+                    *,
+                    docentes_areas (
+                        area_id,
+                        areas_tecnologicas (nome)
+                    )
+                `).order('nome'),
                 supabase.from('turmas').select('*, cursos(nome), matrizes(codigo)'),
                 supabase.from('areas_tecnologicas').select('*').eq('ativo', true).order('nome')
             ]);

@@ -81,5 +81,24 @@ export const ui = {
 
     toggleSidebar(id) {
         // Handled by app.js router mostly
+    },
+
+    SwitchField({ name, checked = false, onChange = '', title = '', className = '' }) {
+        const isChecked = checked ? 'checked' : '';
+        return `
+        <div class="relative inline-block w-14 h-8 rounded-full overflow-hidden group cursor-pointer align-middle ${className}" title="${title}">
+            <input type="checkbox" name="${name}" class="peer absolute w-full h-full opacity-0 z-20 cursor-pointer" ${isChecked} onchange="${onChange}">
+            
+            <!-- Track -->
+            <div class="absolute inset-0 bg-slate-200 peer-checked:bg-emerald-500 transition-colors duration-300 ease-in-out border border-transparent peer-checked:border-emerald-500"></div>
+
+            <!-- Icons -->
+            <i class="ph-bold ph-check text-white absolute left-2.5 top-2 text-base opacity-0 peer-checked:opacity-100 transition-all duration-300 z-10 scale-50 peer-checked:scale-100"></i>
+            <i class="ph-bold ph-x text-slate-400 absolute right-2.5 top-2 text-base opacity-100 peer-checked:opacity-0 transition-all duration-300 z-10 scale-100 peer-checked:scale-50"></i>
+
+            <!-- Knob -->
+            <div class="absolute top-1 left-1 bg-white w-6 h-6 rounded-full shadow-sm transition-transform duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] peer-checked:translate-x-6 z-10"></div>
+        </div>
+        `;
     }
 };

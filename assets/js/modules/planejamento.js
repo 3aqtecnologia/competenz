@@ -291,96 +291,14 @@ export const planejamento = {
     /* ==========================================================================================
        TAB 2: DOCENTES
        ========================================================================================== */
+    /* ==========================================================================================
+       TAB 2: DOCENTES (Delegated to Module)
+       ========================================================================================== */
     renderDocentes(state) {
-        // Trigger initial render shortly
-        setTimeout(() => this.filterDocentes(), 50);
-
-        return `
-            <div class="animate-fade-in">
-                <div class="flex-between" style="margin-bottom: 2rem;">
-                    <div>
-                         <h3 class="input-label" style="font-size: 1.25rem;">Corpo Docente</h3>
-                         <p class="token-meta">Gestão de professores e instrutores</p>
-                    </div>
-                    <button onclick="app.planejamento.openModalDocente()" class="btn btn-primary">
-                        <i class="ph ph-user-plus"></i> Novo Docente
-                    </button>
-                </div>
-
-                <!-- Filters -->
-                <div class="card" style="padding: 1rem; margin-bottom: 1.5rem; display: flex; gap: 1rem;">
-                    <div style="flex: 1; position: relative;">
-                        <i class="ph ph-magnifying-glass" style="position: absolute; left: 1rem; top: 1rem; color: #94a3b8;"></i>
-                        <input id="docente-search" onkeyup="app.planejamento.filterDocentes()" class="input-field" style="padding-left: 2.5rem;" placeholder="Buscar por nome ou formação...">
-                    </div>
-                    <div style="width: 220px;">
-                        <select id="docente-filter-area" onchange="app.planejamento.filterDocentes()" class="input-field">
-                            <option value="">Todas as Áreas</option>
-                            ${state.areasTecnologicas.map(a => `<option value="${a.nome}">${a.nome}</option>`).join('')}
-                        </select>
-                    </div>
-                </div>
-
-                <div id="docentes-list-container" class="token-list">
-                    <div class="loading-spinner"></div>
-                </div>
-            </div>
-        `;
+        return app.docentesView.render(state);
     },
 
-    filterDocentes() {
-        const term = document.getElementById('docente-search')?.value.toLowerCase() || '';
-        const areaFilter = document.getElementById('docente-filter-area')?.value || '';
 
-        const all = app.state.teachers || [];
-
-        const filtered = all.filter(d => {
-            const matchText = d.nome.toLowerCase().includes(term) ||
-                (d.formacao || '').toLowerCase().includes(term);
-
-            const matchArea = areaFilter
-                ? (d.areas_atuacao && d.areas_atuacao.includes(areaFilter))
-                : true;
-
-            return matchText && matchArea;
-        });
-
-        this.renderDocentesList(filtered);
-    },
-
-    renderDocentesList(list) {
-        const container = document.getElementById('docentes-list-container');
-        if (!container) return;
-
-        if (!list.length) {
-            container.innerHTML = ux.renderEmptyState('Nenhum docente encontrado.');
-            return;
-        }
-
-        container.innerHTML = list.map(d => `
-            <div class="token-item" onclick="app.planejamento.openModalDocente('${d.id}')">
-                <div class="token-icon purple" style="font-size: 1.1rem; font-weight: 600;">
-                    ${d.nome.charAt(0)}
-                </div>
-                <div class="token-info">
-                    <div class="token-name">${d.nome}</div>
-                    <div class="token-meta">${d.formacao || 'Formação n/i'} • ${d.email || 'Sem e-mail'}</div>
-                </div>
-                
-                <!-- Tags Area -->
-                <div class="flex gap-1 flex-wrap mr-4 items-center" style="max-width: 35%;">
-                    ${(d.areas_atuacao || []).slice(0, 3).map(a =>
-            `<span style="background:#f3f4f6; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; color: #4b5563; border: 1px solid #e5e7eb;">${a}</span>`
-        ).join('')}
-                    ${(d.areas_atuacao?.length > 3) ? `<span style="font-size: 0.7rem; color: #9ca3af;">+${d.areas_atuacao.length - 3}</span>` : ''}
-                </div>
-
-                <div class="badge ${d.status === 'Ativo' ? 'badge-success' : 'badge-neutral'}">
-                    ${d.status || 'Ativo'}
-                </div>
-            </div>
-        `).join('');
-    },
 
     /* ==========================================================================================
        TAB 3: TURMAS

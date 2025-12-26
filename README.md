@@ -3,10 +3,17 @@
 **Competenz** é um sistema moderno de gestão educacional focado em simplificar processos administrativos e pedagógicos. Construído com uma arquitetura leve e responsiva, o sistema oferece uma experiência de usuário fluida e intuitiva.
 
 ![Status do Projeto](https://img.shields.io/badge/status-em_desenvolvimento-yellow)
-![Tech Stack](https://img.shields.io/badge/stack-HTML_|_CSS_|_JS-blue)
+![Tech Stack](https://img.shields.io/badge/stack-HTML_|_Tailwind_|_JS-blue)
 ![Backend](https://img.shields.io/badge/backend-Supabase-green)
 
 ## 🆕 Histórico de Versões
+
+### v1.2 - Refinamento de UI & Docentes (Dez/2025)
+
+- **Design System Aprimorado**: Integração com **Tailwind CSS** para estilização mais rápida e moderna.
+- **Módulo Docentes 2.0**: Interface completamente redesenhada com modal em abas, cabeçalho fixo e lista em tokens.
+- **Componentes Inteligentes**: Novo componente `SwitchField` (estilo iOS) para interações booleanas intuitivas.
+- **Robustez de Dados**: Validações de CPF/Telefone reforçadas e correções críticas no salvamento de dados.
 
 ### v1.1 - Refatoração Estrutural (Dez/2025)
 
