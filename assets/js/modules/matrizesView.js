@@ -154,7 +154,7 @@ export const matrizesView = {
 <br>
                  <!-- Footer -->
                  <div class="bg-white border-t border-gray-200 p-4 shrink-0 z-20 flex items-center justify-end gap-3">
-                     ${id ? `<button type="button" class="btn btn-secondary h-[48px] px-6 text-red-600 hover:bg-red-50 hover:border-red-200" onclick="app.matrizesView.deleteMatrix('${id}')"><i class="ph ph-trash"></i> Excluir</button>` : ''}
+
                      <button type="button" class="btn btn-secondary h-[48px] px-6" onclick="app.matrizesView.closeModal()">Cancelar</button>
                      <button type="submit" form="form-matriz" class="btn btn-primary h-[48px] px-8 shadow-lg shadow-blue-500/20">
                         <i class="ph ph-floppy-disk"></i> Salvar Matriz
@@ -271,7 +271,7 @@ export const matrizesView = {
         try {
             const res = await matrizes.save(data, id);
             ui.toast('Matriz salva!');
-            this.openModal(res.id);
+            this.closeModal();
             if (window.app && window.app.refreshCurrentView) window.app.refreshCurrentView();
         } catch (err) { ui.toast(err.message, 'error'); }
     },
