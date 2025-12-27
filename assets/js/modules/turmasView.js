@@ -300,7 +300,7 @@ export const turmasView = {
                                 </div>
                                 <div class="input-group">
                                     <label class="input-label">Horas/Dia</label>
-                                    <input type="number" name="horas_diarias" value="${t.horas_diarias || 4}" class="input-field" min="1" max="10">
+                                    <input type="number" name="horas_diarias" value="${t.horas_diarias || 4}" class="input-field" min="1" max="10" onchange="app.turmasView.generateSchedule()">
                                 </div>
                                 <div class="input-group">
                                     <label class="input-label">Dias de Aula</label>
