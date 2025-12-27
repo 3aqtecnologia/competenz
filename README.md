@@ -61,29 +61,12 @@ O coração da estrutura educacional. Permite a definição flexível e reaprove
 - **Cursos**: Gestão do catálogo de oferta (Cursos Técnicos, FIC, etc.).
   - *Novidade*: Vínculo direto e simples com Matrizes Curriculares (N:1).
 - **Matrizes Curriculares**: Criação e versionamento de grades curriculares.
-  - *Destaque*: Matrizes independentes que podem ser compartilhadas por múltiplos cursos.
-  - *Automação*: Cálculo automático de carga horária via banco de dados.
 - **Catálogo de UCs (Unidades Curriculares)**: Banco central de disciplinas.
-  - *Flexibilidade*: UCs compartilhadas entre múltiplas matrizes (N:N), permitindo atualização em massa e consistência pedagógica.
 - **Docentes**: Gestão do corpo docente e suas competências.
-  - *Upload de Fotos*: Integração com Supabase Storage para fotos de perfil.
-  - *Disponibilidade*: Registro de horários disponíveis e áreas de expertise.
 - **Turmas**: Gestão de turmas e cronogramas.
-  - *Gerador Inteligente*: Criação automática de cronogramas considerando:
-    - Dias de aula selecionados
-    - Horas diárias de aula
-    - **Feriados nacionais brasileiros** (fixos e móveis)
-  - *Lotação de Docentes*: Alocação de professores por UC com visualização de cronograma completo.
+- **Ambientes**: Gestão física de salas e laboratórios com controle visual de alocações e relatórios.
 
-### 2. 🏢 Ambientes e Alocações
-
-Gestão física da instituição.
-
-- **Cadastro de Ambientes**: Salas, Lab de Informática, Oficinas.
-- **Controle de Ocupação**: Calendarização visual de uso.
-- **Relatórios**: Geração de PDFs de ocupação com detalhamento por Docente, Curso e Turno.
-
-### 3. 📝 Secretaria (Em Breve)
+### 2. 📝 Secretaria (Em Breve)
 
 Gestão do ciclo de vida do aluno.
 
@@ -91,7 +74,7 @@ Gestão do ciclo de vida do aluno.
 - **Turmas**: Organização logística de alunos e horários.
 - **Documentação**: Emissão de históricos e declarações.
 
-### 4. 🎓 Pedagógico (Futuro)
+### 3. 🎓 Pedagógico (Futuro)
 
 Acompanhamento do processo de ensino-aprendizagem.
 
@@ -99,7 +82,7 @@ Acompanhamento do processo de ensino-aprendizagem.
 - **Notas e Avaliações**: Sistema avaliativo parametrizável.
 - **Planos de Ensino**: Planejamento aula a aula.
 
-### 5. 📊 Dashboard Gerencial
+### 4. 📊 Dashboard Gerencial
 
 Visão holística com indicadores em tempo real para tomada de decisão rápida.
 

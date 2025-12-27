@@ -133,9 +133,6 @@ class App {
                     html = '<div class="card p-10 text-center text-gray-400">Módulo Pedagógico em breve...</div>';
                     // html = pedagogico.render(this.state);
                     break;
-                case 'ambientes':
-                    html = this.ambientes.render(this.state);
-                    break;
                 default:
                     html = `
                         <div class="flex flex-col items-center justify-center h-full text-gray-400 gap-4">

@@ -37,6 +37,10 @@ export const planejamento = {
                          class="tab-pill ${this.currentTab === 'ucs' ? 'active' : ''}">
                         <i class="ph ph-book-bookmark"></i> Catálogo UCs
                     </button>
+                    <button onclick="app.planejamento.switchTab('ambientes')" 
+                         class="tab-pill ${this.currentTab === 'ambientes' ? 'active' : ''}">
+                        <i class="ph ph-buildings"></i> Ambientes
+                    </button>
                 </div>
 
                 <!-- Tab Content -->
@@ -54,6 +58,7 @@ export const planejamento = {
             case 'docentes': return this.renderDocentes(state);
             case 'turmas': return this.renderTurmas(state);
             case 'ucs': return this.renderUCs(state);
+            case 'ambientes': return this.renderAmbientesTab(state);
             default: return this.renderCursos(state);
         }
     },
@@ -309,6 +314,16 @@ export const planejamento = {
 
 
 
+
+    /* ==========================================================================================
+       TAB 4: GESTÃO DE UCS (CATÁLOGO GLOBAL)
+       ========================================================================================== */
+    /* ==========================================================================================
+       TAB 5: AMBIENTES
+       ========================================================================================== */
+    renderAmbientesTab(state) {
+        return app.ambientes.render(state);
+    },
 
     /* ==========================================================================================
        TAB 4: GESTÃO DE UCS (CATÁLOGO GLOBAL)
