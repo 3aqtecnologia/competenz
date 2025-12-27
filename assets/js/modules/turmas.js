@@ -24,7 +24,8 @@ export const turmas = {
                     id, 
                     codigo, 
                     carga_horaria_total
-                )
+                ),
+                turma_pausas (*)
             `)
             .eq('id', id)
             .single();
@@ -89,6 +90,34 @@ export const turmas = {
 
         const { data, error } = await supabase
             .from('lotacoes_turma')
+            .insert(toInsert)
+            .select();
+
+        if (error) throw error;
+        return data;
+    },
+
+    async savePauses(turmaId, pausesData) {
+        // 1. Delete existing
+        const { error: delError } = await supabase
+            .from('turma_pausas')
+            .delete()
+            .eq('turma_id', turmaId);
+
+        if (delError) throw delError;
+
+        // 2. Insert new
+        if (!pausesData || !pausesData.length) return [];
+
+        const toInsert = pausesData.map(p => ({
+            turma_id: turmaId,
+            descricao: p.descricao,
+            data_inicio: p.data_inicio,
+            data_fim: p.data_fim
+        }));
+
+        const { data, error } = await supabase
+            .from('turma_pausas')
             .insert(toInsert)
             .select();
 

@@ -9,7 +9,7 @@ export const turmasView = {
             <div id="turmas-view-container" class="animate-fade-in">
                 <div class="flex-between mb-8">
                     <div>
-                        <h3 class="input-label text-xl mb-1">Módulo de Turmas</h3>
+                        <h3 class="input-label text-xl mb-1">Turmas</h3>
                         <p class="token-meta">Gerencie o calendário e alocação de turmas</p>
                     </div>
                     <button class="btn btn-primary" onclick="app.turmasView.openModal()">
@@ -20,11 +20,11 @@ export const turmasView = {
                 <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                     <!-- Filters -->
                     <div class="p-4 border-b border-slate-100 bg-slate-50 flex gap-4">
-                         <div class="relative flex-1 max-w-xs">
+                         <div class="relative w-[70%]">
                             <i class="ph ph-magnifying-glass absolute left-3 top-3 text-slate-400"></i>
-                            <input type="text" placeholder="Buscar turma..." class="input-field pl-10">
+                            <input type="text" placeholder="Buscar turma..." class="input-field pl-10" id="filter-search" oninput="app.turmasView.filterList()">
                          </div>
-                         <select class="input-field max-w-xs">
+                         <select class="input-field flex-1" id="filter-status" onchange="app.turmasView.filterList()">
                             <option value="">Todas as Situações</option>
                             <option value="Em Andamento">Em Andamento</option>
                             <option value="Planejamento">Planejamento</option>
@@ -81,6 +81,19 @@ export const turmasView = {
 
         try {
             const list = await turmas.list();
+
+            // Auto-update status based on date (Visual only)
+            const today = window.dayjs().startOf('day');
+            list.forEach(t => {
+                if (t.data_fim_previsto && t.status !== 'Concluída') {
+                    const end = window.dayjs(t.data_fim_previsto);
+                    if (today.isAfter(end)) {
+                        t.status = 'Concluída';
+                    }
+                }
+            });
+
+            this.cachedList = list;
             this.renderListItems(list);
         } catch (err) {
             console.error(err);
@@ -95,6 +108,22 @@ export const turmasView = {
                 target.innerHTML = `<div class="p-6 text-red-500">Erro ao carregar turmas: ${err.message}</div>`;
             }
         }
+    },
+
+    filterList() {
+        const search = document.getElementById('filter-search')?.value.toLowerCase() || '';
+        const status = document.getElementById('filter-status')?.value || '';
+
+        if (!this.cachedList) return;
+
+        const filtered = this.cachedList.filter(t => {
+            const matchSearch = t.nome.toLowerCase().includes(search) ||
+                (t.codigo_sge && t.codigo_sge.toLowerCase().includes(search));
+            const matchStatus = status ? t.status === status : true;
+            return matchSearch && matchStatus;
+        });
+
+        this.renderListItems(filtered);
     },
 
     renderListItems(list) {
@@ -135,6 +164,7 @@ export const turmasView = {
             case 'Em Andamento': return 'badge-success';
             case 'Planejamento': return 'badge-neutral';
             case 'Concluída': return 'bg-blue-100 text-blue-700';
+            case 'Bloqueada': return 'bg-red-100 text-red-700';
             default: return 'badge-neutral';
         }
     },
@@ -148,7 +178,9 @@ export const turmasView = {
             try {
                 const data = await turmas.getById(id);
                 t = data;
+                t = data;
                 lotacoes = data.lotacoes || [];
+                this.currentPauses = data.turma_pausas || [];
 
                 // Fetch UCs of the linked matrix for context
                 if (t.matriz_id) {
@@ -249,6 +281,7 @@ export const turmasView = {
                                         <option value="Planejamento" ${t.status === 'Planejamento' ? 'selected' : ''}>Planejamento</option>
                                         <option value="Em Andamento" ${t.status === 'Em Andamento' ? 'selected' : ''}>Em Andamento</option>
                                         <option value="Concluída" ${t.status === 'Concluída' ? 'selected' : ''}>Concluída</option>
+                                        <option value="Bloqueada" ${t.status === 'Bloqueada' ? 'selected' : ''}>Bloqueada</option>
                                     </select>
                                 </div>
                             </div>
@@ -277,7 +310,7 @@ export const turmasView = {
             const isChecked = t.dias_aula?.includes(d) || (!t.dias_aula && d <= 5);
             return `
                                                 <label class="checkbox-tag text-xs px-2 py-1">
-                                                    <input type="checkbox" name="dias_aula" value="${d}" ${isChecked ? 'checked' : ''}>
+                                                    <input type="checkbox" name="dias_aula" value="${d}" ${isChecked ? 'checked' : ''} onchange="app.turmasView.generateSchedule()">
                                                     ${names[d]}
                                                 </label>
                                             `;
@@ -291,6 +324,45 @@ export const turmasView = {
                     <!-- TAB 2: CRONOGRAMA -->
                     <div id="tab-cronograma" class="modal-tab-content hidden space-y-6">
                         
+                        <!-- Pauses Section -->
+                        <div class="card bg-white p-4 border border-slate-200">
+                            <h5 class="font-bold text-slate-700 mb-3 flex items-center gap-2 text-sm">
+                                <i class="ph ph-calendar-slash text-orange-500"></i> Pausas & Recessos
+                            </h5>
+                            
+                            <div class="flex gap-2 mb-3 items-end">
+                                <div class="flex-1">
+                                    <label class="input-label text-[10px]">Descrição</label>
+                                    <input type="text" id="pause-desc" class="input-field text-sm py-1" placeholder="Ex: Férias Coletivas">
+                                </div>
+                                <div class="w-32">
+                                    <label class="input-label text-[10px]">Início</label>
+                                    <input type="date" id="pause-start" class="input-field text-sm py-1">
+                                </div>
+                                <div class="w-32">
+                                    <label class="input-label text-[10px]">Fim</label>
+                                    <input type="date" id="pause-end" class="input-field text-sm py-1">
+                                </div>
+                                <button type="button" class="btn btn-secondary py-1 px-3" onclick="app.turmasView.addPause()" title="Adicionar Pausa">
+                                    <i class="ph ph-plus"></i>
+                                </button>
+                            </div>
+
+                            <div class="bg-slate-50 rounded border border-slate-200 overflow-hidden">
+                                <table class="w-full text-xs">
+                                    <thead>
+                                        <tr class="bg-slate-100 text-slate-500 text-left">
+                                            <th class="p-2 font-semibold">Descrição</th>
+                                            <th class="p-2 font-semibold w-24">Início</th>
+                                            <th class="p-2 font-semibold w-24">Fim</th>
+                                            <th class="p-2 w-10"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="pauses-list-body" class="divide-y divide-slate-100"></tbody>
+                                </table>
+                            </div>
+                        </div>
+
                         <!-- Toolbar -->
                         <div class="bg-blue-50 border border-blue-100 p-4 rounded-lg flex items-center justify-between">
                             <div>
@@ -333,6 +405,9 @@ export const turmasView = {
             </form>
         `, 'modal-lg');
 
+        // Initial Render of Pauses
+        this.renderPausesList();
+
         if (id && matrizUCs.length) {
             // Sort matrizUCs based on lotacoes dates to preserve saved order
             if (lotacoes && lotacoes.length > 0) {
@@ -367,6 +442,7 @@ export const turmasView = {
             this.renderScheduleTable(lotacoes, matrizUCs);
         } else {
             this.currentMatrizUCs = [];
+            this.currentPauses = [];
         }
 
         // Apply SGE Mask: #####.####.####
@@ -594,6 +670,11 @@ export const turmasView = {
 
         ui.toast('Calculando cronograma (considerando feriados nacionais)...', 'info');
 
+        // Preserve teachers
+        const currentLotacoes = this.captureTableState();
+        const teacherMap = {};
+        currentLotacoes.forEach(l => { if (l.docente_id) teacherMap[l.uc_id] = l.docente_id; });
+
         // Algorithm
         let currentDate = window.dayjs(startStr);
         const newSchedule = [];
@@ -602,8 +683,8 @@ export const turmasView = {
             const ch = uc.carga_horaria || uc.horas || 0;
             const daysNeeded = Math.ceil(ch / hoursPerDay);
 
-            // Find valid start date (must be a class day AND not a holiday)
-            while (!daysOfWeek.includes(currentDate.day()) || this.isBrazilianHoliday(currentDate)) {
+            // Find valid start date (must be a class day AND not a holiday AND not paused)
+            while (!daysOfWeek.includes(currentDate.day()) || this.isBrazilianHoliday(currentDate) || this.isPaused(currentDate)) {
                 currentDate = currentDate.add(1, 'day');
             }
             const startDate = currentDate; // Found start
@@ -613,7 +694,7 @@ export const turmasView = {
             let iterDate = startDate;
             while (daysCount < daysNeeded) {
                 // Only count valid class days (not holidays)
-                if (daysOfWeek.includes(iterDate.day()) && !this.isBrazilianHoliday(iterDate)) {
+                if (daysOfWeek.includes(iterDate.day()) && !this.isBrazilianHoliday(iterDate) && !this.isPaused(iterDate)) {
                     daysCount++;
                 }
                 if (daysCount < daysNeeded) { // Don't advance on the last day loop
@@ -625,7 +706,8 @@ export const turmasView = {
             newSchedule.push({
                 uc_id: uc.id,
                 data_inicio: startDate.format('YYYY-MM-DD'),
-                data_fim: endDate.format('YYYY-MM-DD')
+                data_fim: endDate.format('YYYY-MM-DD'),
+                docente_id: teacherMap[uc.id]
             });
 
             // Set next start date (day after end date)
@@ -695,6 +777,9 @@ export const turmasView = {
                 await turmas.saveLotacoes(savedTurma.id, lotacoes);
             }
 
+            // Save Pauses
+            await turmas.savePauses(savedTurma.id, this.currentPauses || []);
+
             ui.toast('Turma salva com sucesso!');
             ui.closeModal();
             this.loadList(); // Refresh list
@@ -734,10 +819,81 @@ export const turmasView = {
             return;
         }
 
-        // Capture state to preserve inputs
-        const currentLotacoes = this.captureTableState();
+        // Recalculate dates automatically based on new order
+        this.generateSchedule();
+    },
 
-        // Re-render
-        this.renderScheduleTable(currentLotacoes, ucs);
+    // --- Pause Management ---
+
+    isPaused(date) {
+        if (!this.currentPauses || !this.currentPauses.length) return false;
+        return this.currentPauses.some(p => {
+            const start = window.dayjs(p.data_inicio).startOf('day');
+            const end = window.dayjs(p.data_fim).endOf('day');
+            return date.isAfter(start.subtract(1, 'second')) && date.isBefore(end.add(1, 'second'));
+        });
+    },
+
+    addPause() {
+        const descEl = document.getElementById('pause-desc');
+        const startEl = document.getElementById('pause-start');
+        const endEl = document.getElementById('pause-end');
+
+        const desc = descEl?.value.trim();
+        const start = startEl?.value;
+        const end = endEl?.value;
+
+        if (!desc || !start || !end) {
+            ui.toast('Preencha os campos da pausa.', 'warning');
+            return;
+        }
+
+        if (window.dayjs(start).isAfter(end)) {
+            ui.toast('Data Início deve ser anterior ao Fim.', 'warning');
+            return;
+        }
+
+        this.currentPauses = this.currentPauses || [];
+        this.currentPauses.push({ descricao: desc, data_inicio: start, data_fim: end });
+
+        // Clear inputs
+        descEl.value = '';
+        startEl.value = '';
+        endEl.value = '';
+
+        this.renderPausesList();
+        this.generateSchedule(); // Auto-recalculate
+        ui.toast('Pausa adicionada e cronograma recalculado.', 'success');
+    },
+
+    removePause(index) {
+        if (!this.currentPauses) return;
+        this.currentPauses.splice(index, 1);
+        this.renderPausesList();
+        this.generateSchedule(); // Auto-recalculate
+        ui.toast('Pausa removida e cronograma recalculado.', 'info');
+    },
+
+    renderPausesList() {
+        const tbody = document.getElementById('pauses-list-body');
+        if (!tbody) return;
+
+        if (!this.currentPauses || !this.currentPauses.length) {
+            tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-400">Nenhuma pausa cadastrada.</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = this.currentPauses.map((p, idx) => `
+            <tr class="hover:bg-slate-50">
+                <td class="p-2">${p.descricao}</td>
+                <td class="p-2 text-slate-600">${window.dayjs(p.data_inicio).format('DD/MM/YYYY')}</td>
+                <td class="p-2 text-slate-600">${window.dayjs(p.data_fim).format('DD/MM/YYYY')}</td>
+                <td class="p-2 text-right">
+                    <button type="button" class="text-red-500 hover:text-red-700" onclick="app.turmasView.removePause(${idx})">
+                        <i class="ph ph-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `).join('');
     }
 };

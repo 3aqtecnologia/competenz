@@ -8,6 +8,18 @@
 
 ## 🆕 Histórico de Versões
 
+### v1.4 - Gestão de Calendário Avançada (Dez/2025)
+
+- **Pausas e Recessos**: Novo sistema para gestão de períodos sem aula (Férias, Recessos, Feriados Internos). O gerador de datas pula automaticamente esses períodos ao calcular o cronograma.
+- **Status "Bloqueada"**: Nova situação de turma para indicar turmas suspensas ou aguardando liberação.
+- **Recálculo Inteligente**:
+  - Ao reordenar UCs, as datas de todo o cronograma são recalculadas mantendo os docentes alocados.
+  - Alterações em Pausas recalculam as datas instantaneamente.
+  - "Auto-conclusão" visual: Turmas com data de término passada são exibidas como Concluídas.
+- **Filtros e Busca**:
+  - Busca textual e filtro de situação em tempo real no módulo de Turmas.
+  - Layout otimizado da barra de busca (70% de largura).
+
 ### v1.3 - Refinamento Turmas & Integração (Dez/2025)
 
 - **Gestão de Turmas Avançada**: Reordenação de UCs no cronograma com persistência automática e recálculo inteligente de datas (considerando feriados estaduais).
