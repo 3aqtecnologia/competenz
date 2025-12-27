@@ -8,6 +8,13 @@
 
 ## 🆕 Histórico de Versões
 
+### v1.3 - Refinamento Turmas & Integração (Dez/2025)
+
+- **Gestão de Turmas Avançada**: Reordenação de UCs no cronograma com persistência automática e recálculo inteligente de datas (considerando feriados estaduais).
+- **Integração Curso-Turma**: Vínculo direto entre Turmas e Cursos, com auto-seleção da Matriz Curricular para agilizar o cadastro.
+- **UX Refinada**: Novos layouts padronizados para formulários de Turmas (Grid 4 colunas) e Capacidades de UCs (Visualização Vertical).
+- **Integridade de Dados**: Constraints e índices adicionados ao banco para robustez no relacionamento Curso-Turma.
+
 ### v1.2 - Refinamento de UI & Docentes (Dez/2025)
 
 - **Design System Aprimorado**: Integração com **Tailwind CSS** para estilização mais rápida e moderna.
@@ -40,6 +47,14 @@ O coração da estrutura educacional. Permite a definição flexível e reaprove
 - **Catálogo de UCs (Unidades Curriculares)**: Banco central de disciplinas.
   - *Flexibilidade*: UCs compartilhadas entre múltiplas matrizes (N:N), permitindo atualização em massa e consistência pedagógica.
 - **Docentes**: Gestão do corpo docente e suas competências.
+  - *Upload de Fotos*: Integração com Supabase Storage para fotos de perfil.
+  - *Disponibilidade*: Registro de horários disponíveis e áreas de expertise.
+- **Turmas**: Gestão de turmas e cronogramas.
+  - *Gerador Inteligente*: Criação automática de cronogramas considerando:
+    - Dias de aula selecionados
+    - Horas diárias de aula
+    - **Feriados nacionais brasileiros** (fixos e móveis)
+  - *Lotação de Docentes*: Alocação de professores por UC com visualização de cronograma completo.
 
 ### 2. 📝 Secretaria (Em Breve)
 

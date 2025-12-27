@@ -5,6 +5,8 @@ import { planejamento } from './modules/planejamento.js';
 import { matrizesView } from './modules/matrizesView.js';
 import { docentes } from './modules/docentes.js';
 import { docentesView } from './modules/docentesView.js';
+import { turmas } from './modules/turmas.js';
+import { turmasView } from './modules/turmasView.js';
 import { ui } from './utils/ui.js';
 
 class App {
@@ -26,6 +28,8 @@ class App {
         this.matrizesView = matrizesView; // (UI Controller)
         this.docentes = docentes;
         this.docentesView = docentesView;
+        this.turmas = turmas;
+        this.turmasView = turmasView;
         this.dashboard = { render: renderDashboard }; // Adapter
 
         // Expose UI helper globally for HTML onclick events

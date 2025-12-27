@@ -68,11 +68,20 @@ export const planejamento = {
         // Render Content
         const content = document.getElementById('planejamento-content');
         if (content) {
-            content.innerHTML = '<div class="loading-spinner"></div>';
-            setTimeout(() => {
-                content.innerHTML = this.renderTabContent(app.state);
-            }, 200);
+            content.innerHTML = this.renderTabContent(app.state);
+
+            // Post-Render Hooks (with DOM update delay)
+            if (tabName === 'turmas' && app.turmasView?.init) {
+                app.turmasView._initialized = false; // Reset flag for re-initialization
+                requestAnimationFrame(() => app.turmasView.init());
+            }
         }
+    },
+
+    /* ... Cursos ... */
+
+    renderTurmas(state) {
+        return app.turmasView.render();
     },
 
     /* ==========================================================================================
@@ -300,44 +309,6 @@ export const planejamento = {
 
 
 
-    /* ==========================================================================================
-       TAB 3: TURMAS
-       ========================================================================================== */
-    renderTurmas(state) {
-        return `
-             <div>
-                <div class="flex-between" style="margin-bottom: 1.5rem;">
-                    <div>
-                         <h3 class="input-label" style="font-size: 1.1rem;">Turmas em Andamento</h3>
-                    </div>
-                    <button onclick="app.planejamento.openModalTurma()" class="btn btn-primary">
-                        <i class="ph ph-plus"></i> Nova Turma
-                    </button>
-                </div>
-
-                <div class="grid-3">
-                    ${state.classes.map(t => `
-                        <div class="card" style="border-left: 4px solid ${t.turno === 'Noite' ? '#6366f1' : '#eab308'}; display: flex; flex-direction: column; gap: 1rem;">
-                            <div class="flex-between">
-                                <h4 style="margin:0; font-size: 1.25rem; font-weight: 700;">${t.codigo_sge}</h4>
-                                <span class="badge badge-neutral">${t.turno}</span>
-                            </div>
-                            <p style="margin:0; font-size: 0.9rem; color: var(--text-secondary); line-height: 1.4;">${t.cursos?.nome}</p>
-                            
-                            <div style="margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
-                                <span style="font-size: 0.75rem; color: var(--text-secondary);">
-                                    Início: ${window.dayjs(t.data_inicio).format('DD/MM/YYYY')}
-                                </span>
-                                <button onclick="app.planejamento.openLotacao('${t.id}')" class="btn btn-secondary" style="padding: 0.4rem 0.8rem; font-size: 0.75rem;">
-                                    <i class="ph ph-users-three"></i> Lotação
-                                </button>
-                            </div>
-                        </div>
-                    `).join('') || '<div class="card" style="grid-column: 1/-1; text-align: center;">Nenhuma turma.</div>'}
-                </div>
-            </div>
-        `;
-    },
 
     /* ==========================================================================================
        TAB 4: GESTÃO DE UCS (CATÁLOGO GLOBAL)
@@ -528,25 +499,21 @@ export const planejamento = {
                         <div class="input-hint" style="margin-bottom: 1rem; justify-content: center; background: #fffbeb; padding: 0.5rem; border-radius: 8px; color: #b45309;">
                             <i class="ph ph-lightbulb"></i> Pressione ENTER para separar cada item da lista (Um por linha).
                         </div>
-                        <div class="grid-2">
-                            <div class="input-group">
-                                <label class="input-label">Conhecimentos (Saber)</label>
-                                <textarea name="conhecimentos" class="input-field" rows="5" placeholder="Um item por linha...">${toText(uc?.conhecimentos)}</textarea>
-                            </div>
-                            <div class="input-group">
-                                <label class="input-label">Capacidades Técnicas (Saber Fazer)</label>
-                                <textarea name="cap_tecnicas" class="input-field" rows="5" placeholder="Um item por linha...">${toText(uc?.capacidades_tecnicas)}</textarea>
-                            </div>
+                        <div class="input-group">
+                            <label class="input-label">Conhecimentos (Saber)</label>
+                            <textarea name="conhecimentos" class="input-field" rows="5" placeholder="Um item por linha...">${toText(uc?.conhecimentos)}</textarea>
                         </div>
-                        <div class="grid-2">
-                             <div class="input-group">
-                                <label class="input-label">Capacidades Sociais</label>
-                                <textarea name="cap_sociais" class="input-field" rows="4" placeholder="Um item por linha...">${toText(uc?.capacidades_sociais)}</textarea>
-                            </div>
-                            <div class="input-group">
-                                <label class="input-label">Capacidades Socioemocionais</label>
-                                <textarea name="cap_socio" class="input-field" rows="4" placeholder="Um item por linha...">${toText(uc?.capacidades_socioemocionais)}</textarea>
-                            </div>
+                        <div class="input-group">
+                            <label class="input-label">Capacidades Técnicas (Saber Fazer)</label>
+                            <textarea name="cap_tecnicas" class="input-field" rows="5" placeholder="Um item por linha...">${toText(uc?.capacidades_tecnicas)}</textarea>
+                        </div>
+                        <div class="input-group">
+                             <label class="input-label">Capacidades Sociais</label>
+                             <textarea name="cap_sociais" class="input-field" rows="4" placeholder="Um item por linha...">${toText(uc?.capacidades_sociais)}</textarea>
+                        </div>
+                        <div class="input-group">
+                             <label class="input-label">Capacidades Socioemocionais</label>
+                             <textarea name="cap_socio" class="input-field" rows="4" placeholder="Um item por linha...">${toText(uc?.capacidades_socioemocionais)}</textarea>
                         </div>
                     </div>
 

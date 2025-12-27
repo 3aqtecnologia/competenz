@@ -1,0 +1,743 @@
+import { turmas } from './turmas.js';
+import { ui } from '../utils/ui.js';
+import { supabase } from '../services/supabase.js';
+
+export const turmasView = {
+    render() {
+        // Return HTML string for the module container
+        return `
+            <div id="turmas-view-container" class="animate-fade-in">
+                <div class="flex-between mb-8">
+                    <div>
+                        <h3 class="input-label text-xl mb-1">Módulo de Turmas</h3>
+                        <p class="token-meta">Gerencie o calendário e alocação de turmas</p>
+                    </div>
+                    <button class="btn btn-primary" onclick="app.turmasView.openModal()">
+                        <i class="ph ph-plus"></i> Nova Turma
+                    </button>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <!-- Filters -->
+                    <div class="p-4 border-b border-slate-100 bg-slate-50 flex gap-4">
+                         <div class="relative flex-1 max-w-xs">
+                            <i class="ph ph-magnifying-glass absolute left-3 top-3 text-slate-400"></i>
+                            <input type="text" placeholder="Buscar turma..." class="input-field pl-10">
+                         </div>
+                         <select class="input-field max-w-xs">
+                            <option value="">Todas as Situações</option>
+                            <option value="Em Andamento">Em Andamento</option>
+                            <option value="Planejamento">Planejamento</option>
+                         </select>
+                    </div>
+
+                    <div id="turmas-list" class="divide-y divide-slate-100">
+                        <div class="p-8 text-center text-slate-400">
+                            <i class="ph ph-spinner animate-spin text-2xl mb-2"></i>
+                            <p>Carregando turmas...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    },
+
+    _initialized: false,
+    _initRetries: 0,
+
+    init() {
+        // Prevent multiple initializations
+        if (this._initialized) {
+            console.log('[TurmasView] Already initialized, skipping');
+            return;
+        }
+
+        // Verify DOM is ready
+        const target = document.getElementById('turmas-list');
+        if (!target) {
+            this._initRetries++;
+            if (this._initRetries > 10) {
+                console.error('[TurmasView] Failed to initialize after 10 retries - DOM element not found');
+                this._initRetries = 0;
+                return;
+            }
+            console.warn(`[TurmasView] DOM not ready yet, retry ${this._initRetries}/10...`);
+            setTimeout(() => this.init(), 50);
+            return;
+        }
+
+        this._initialized = true;
+        this._initRetries = 0;
+        console.log('[TurmasView] Initializing...');
+        this.loadList();
+    },
+
+    async loadList() {
+        const target = document.getElementById('turmas-list');
+        if (!target) {
+            console.error('[TurmasView] Element #turmas-list not found in DOM');
+            return;
+        }
+
+        try {
+            const list = await turmas.list();
+            this.renderListItems(list);
+        } catch (err) {
+            console.error(err);
+            if (err.message && err.message.includes('relation')) {
+                target.innerHTML = `
+                    <div class="p-6 text-red-500 bg-red-50 rounded-lg text-center">
+                        <i class="ph ph-warning text-2xl mb-2"></i><br>
+                        <strong>Tabelas não encontradas!</strong><br>
+                        Execute o script <code>assets/sql/20251226_turmas_module.sql</code> no Supabase.
+                    </div>`;
+            } else {
+                target.innerHTML = `<div class="p-6 text-red-500">Erro ao carregar turmas: ${err.message}</div>`;
+            }
+        }
+    },
+
+    renderListItems(list) {
+        const target = document.getElementById('turmas-list');
+        if (!list.length) {
+            target.innerHTML = `<div class="p-10 text-center text-slate-400">Nenhuma turma cadastrada.</div>`;
+            return;
+        }
+
+        target.innerHTML = list.map(t => `
+            <div class="p-4 hover:bg-slate-50 transition-colors flex items-center justify-between group cursor-pointer" onclick="app.turmasView.openModal('${t.id}')">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center text-xl font-bold">
+                        ${t.nome.substring(0, 2).toUpperCase()}
+                    </div>
+                    <div>
+                        <div class="text-[10px] font-mono font-bold text-slate-400 tracking-wider mb-0.5">${t.codigo_sge || 'S/ CÓDIGO'}</div>
+                        <h4 class="font-bold text-slate-800">${t.nome}</h4>
+                        <div class="text-xs text-slate-500 flex gap-3 mt-1">
+                            <span><i class="ph ph-calendar"></i> ${window.dayjs(t.data_inicio).format('DD/MM/YYYY')}</span>
+                            <span>•</span>
+                            <span>${t.matrizes?.codigo || 'Sem Matriz'}</span>
+                            <span>•</span>
+                            <span>${t.turno || 'Turno n/i'}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4">
+                    <span class="badge ${this.getStatusBadge(t.status)}">${t.status}</span>
+                    <i class="ph ph-caret-right text-gray-300"></i>
+                </div>
+            </div>
+        `).join('');
+    },
+
+    getStatusBadge(status) {
+        switch (status) {
+            case 'Em Andamento': return 'badge-success';
+            case 'Planejamento': return 'badge-neutral';
+            case 'Concluída': return 'bg-blue-100 text-blue-700';
+            default: return 'badge-neutral';
+        }
+    },
+
+    async openModal(id = null) {
+        let t = {};
+        let lotacoes = [];
+        let matrizUCs = [];
+
+        if (id) {
+            try {
+                const data = await turmas.getById(id);
+                t = data;
+                lotacoes = data.lotacoes || [];
+
+                // Fetch UCs of the linked matrix for context
+                if (t.matriz_id) {
+                    // We need to implement a way to get UCs from Matriz Service or direct query
+                    // Assuming we can fetch them:
+                    const { data: ucs } = await supabase.from('matriz_ucs')
+                        .select('*, unidades_curriculares(*)')
+                        .eq('matriz_id', t.matriz_id)
+                        .order('ordem');
+                    matrizUCs = ucs.map(item => ({ ...item.unidades_curriculares, ordem: item.ordem }));
+                }
+
+            } catch (err) {
+                console.error(err);
+                ui.toast('Erro ao carregar turma', 'error');
+                return;
+            }
+        }
+
+        let matrices = app.state.matrices || [];
+        let courses = app.state.courses || [];
+
+        if (!matrices.length || !courses.length) {
+            try {
+                const [resM, resC] = await Promise.all([
+                    !matrices.length ? supabase.from('matrizes').select('*') : { data: matrices },
+                    !courses.length ? supabase.from('cursos').select('*') : { data: courses }
+                ]);
+                matrices = resM.data || [];
+                courses = resC.data || [];
+
+                // Cache updates
+                if (app.state) {
+                    if (!app.state.matrices || !app.state.matrices.length) app.state.matrices = matrices;
+                    if (!app.state.courses || !app.state.courses.length) app.state.courses = courses;
+                }
+            } catch (e) {
+                console.error('Error fetching defaults', e);
+            }
+        }
+        this.cachedCourses = courses;
+
+        ui.openModalWindow(id ? 'Editar Turma' : 'Nova Turma', `
+            <form id="form-turma" onsubmit="app.turmasView.save(event, '${id || ''}')" class="flex flex-col h-full">
+                
+                <div class="bg-white border-b border-slate-200 px-6 py-4 flex items-start gap-4 shrink-0">
+                    <div class="w-1/4 max-w-[160px]">
+                        <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Cód. SGE *</label>
+                        <input name="codigo_sge" value="${t.codigo_sge || ''}" class="input-field text-sm font-mono font-bold py-1 px-2" placeholder="00000.0000.0000" maxlength="15" required>
+                    </div>
+                    <div class="flex-1">
+                        <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Nome da Turma *</label>
+                        <input name="nome" value="${t.nome || ''}" class="text-lg font-bold text-slate-800 bg-transparent border-none p-0 focus:ring-0 w-full placeholder-slate-300" placeholder="Ex: Téc. Enfermagem 2025.1" required>
+                    </div>
+                    </div>
+                </div>
+
+                <!-- Tabs -->
+                <div class="px-6 pt-4 bg-slate-50 border-b border-slate-200 flex gap-4 shrink-0">
+                    <button type="button" class="tab-pill active" onclick="ui.switchModalTab('tab-dados')">Dados Gerais</button>
+                    <button type="button" class="tab-pill" onclick="ui.switchModalTab('tab-cronograma')">Cronograma & Lotação</button>
+                </div>
+
+                <!-- Content Scrollable -->
+                <div class="flex-1 overflow-y-auto p-6 bg-slate-50">
+                    
+                    <!-- TAB 1: DADOS GERAIS -->
+                    <div id="tab-dados" class="modal-tab-content block space-y-6">
+                        <div class="card bg-white p-6">
+                            <h4 class="text-sm font-bold text-slate-700 mb-4 border-b pb-2">Configuração do Curso</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="input-group">
+                                    <label class="input-label">Curso Vinculado</label>
+                                    <select name="curso_id" class="input-field" onchange="app.turmasView.onCursoChange(this)" required>
+                                        <option value="">Selecione um Curso...</option>
+                                        ${courses.map(c => `<option value="${c.id}" ${t.curso_id === c.id ? 'selected' : ''}>${c.nome}</option>`).join('')}
+                                    </select>
+                                </div>
+                                <div class="input-group">
+                                    <label class="input-label">Matriz Curricular</label>
+                                    <select name="matriz_id" class="input-field" onchange="app.turmasView.onMatrizChange(this)" required>
+                                        <option value="">Selecione uma Matriz...</option>
+                                        ${matrices.map(m => `<option value="${m.id}" ${t.matriz_id === m.id ? 'selected' : ''}>${m.codigo}</option>`).join('')}
+                                    </select>
+                                </div>
+                                <div class="input-group">
+                                    <label class="input-label">Turno</label>
+                                    <select name="turno" class="input-field">
+                                        <option value="Manhã" ${t.turno === 'Manhã' ? 'selected' : ''}>Manhã</option>
+                                        <option value="Tarde" ${t.turno === 'Tarde' ? 'selected' : ''}>Tarde</option>
+                                        <option value="Noite" ${t.turno === 'Noite' ? 'selected' : ''}>Noite</option>
+                                        <option value="Integral" ${t.turno === 'Integral' ? 'selected' : ''}>Integral</option>
+                                    </select>
+                                </div>
+                                <div class="input-group">
+                                    <label class="input-label">Situação</label>
+                                    <select name="status" class="input-field">
+                                        <option value="Planejamento" ${t.status === 'Planejamento' ? 'selected' : ''}>Planejamento</option>
+                                        <option value="Em Andamento" ${t.status === 'Em Andamento' ? 'selected' : ''}>Em Andamento</option>
+                                        <option value="Concluída" ${t.status === 'Concluída' ? 'selected' : ''}>Concluída</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card bg-white p-6">
+                            <h4 class="text-sm font-bold text-slate-700 mb-4 border-b pb-2">Regras de Cronograma</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                <div class="input-group">
+                                    <label class="input-label">Data de Início</label>
+                                    <input type="date" name="data_inicio" value="${t.data_inicio || ''}" class="input-field" required>
+                                </div>
+                                <div class="input-group">
+                                    <label class="input-label">Previsão Término</label>
+                                    <input type="date" name="data_fim_previsto" value="${t.data_fim_previsto || ''}" class="input-field bg-slate-100 text-slate-500 cursor-not-allowed" readonly tabindex="-1">
+                                </div>
+                                <div class="input-group">
+                                    <label class="input-label">Horas/Dia</label>
+                                    <input type="number" name="horas_diarias" value="${t.horas_diarias || 4}" class="input-field" min="1" max="10">
+                                </div>
+                                <div class="input-group">
+                                    <label class="input-label">Dias de Aula</label>
+                                    <div class="flex gap-1 flex-wrap mt-2">
+                                        ${[1, 2, 3, 4, 5, 6].map(d => {
+            const names = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab'];
+            const isChecked = t.dias_aula?.includes(d) || (!t.dias_aula && d <= 5);
+            return `
+                                                <label class="checkbox-tag text-xs px-2 py-1">
+                                                    <input type="checkbox" name="dias_aula" value="${d}" ${isChecked ? 'checked' : ''}>
+                                                    ${names[d]}
+                                                </label>
+                                            `;
+        }).join('')}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB 2: CRONOGRAMA -->
+                    <div id="tab-cronograma" class="modal-tab-content hidden space-y-6">
+                        
+                        <!-- Toolbar -->
+                        <div class="bg-blue-50 border border-blue-100 p-4 rounded-lg flex items-center justify-between">
+                            <div>
+                                <h4 class="font-bold text-blue-900">Gerador de Cronograma</h4>
+                                <p class="text-xs text-blue-700">Gera datas automaticamente baseado nas regras.</p>
+                            </div>
+                            <button type="button" class="btn btn-primary bg-blue-600 hover:bg-blue-700 py-2 text-sm" onclick="app.turmasView.generateSchedule()">
+                                <i class="ph ph-magic-wand"></i> Gerar Datas
+                            </button>
+                        </div>
+
+                        <!-- Schedule Table -->
+                        <div class="bg-white rounded-lg border border-slate-200 overflow-hidden">
+                            <table class="w-full text-sm text-left">
+                                <thead class="bg-slate-50 text-slate-500 font-semibold border-b border-slate-200">
+                                    <tr>
+                                        <th class="p-3">Ordem</th>
+                                        <th class="p-3">Unidade Curricular</th>
+                                        <th class="p-3">CH</th>
+                                        <th class="p-3">Início</th>
+                                        <th class="p-3">Fim</th>
+                                        <th class="p-3">Docente</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="schedule-body" class="divide-y divide-slate-100">
+                                    <!-- Rendered via JS -->
+                                    <tr class="text-slate-400 text-center"><td colspan="6" class="p-6">Clique em "Gerar Datas" ou selecione uma matriz.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Footer -->
+                <div class="bg-white border-t border-gray-200 p-4 flex justify-end gap-3 shrink-0 z-20">
+                    <button type="button" class="btn btn-secondary" onclick="ui.closeModal()">Cancelar</button>
+                    <button type="submit" class="btn btn-primary px-8">Salvar Turma</button>
+                </div>
+            </form>
+        `, 'modal-lg');
+
+        if (id && matrizUCs.length) {
+            // Sort matrizUCs based on lotacoes dates to preserve saved order
+            if (lotacoes && lotacoes.length > 0) {
+                const sortMap = {};
+                lotacoes.forEach(l => {
+                    if (l.data_inicio) sortMap[l.uc_id] = l.data_inicio;
+                });
+
+                // Only sort if we have dates to sort by
+                if (Object.keys(sortMap).length > 0) {
+                    matrizUCs.sort((a, b) => {
+                        const dateA = sortMap[a.id];
+                        const dateB = sortMap[b.id];
+
+                        // Sort by start date ASC
+                        if (dateA && dateB) {
+                            if (dateA < dateB) return -1;
+                            if (dateA > dateB) return 1;
+                            return 0;
+                        }
+                        // Items with dates come first (or last? Let's assume defined dates come first as they are scheduled)
+                        if (dateA) return -1;
+                        if (dateB) return 1;
+
+                        // Fallback to original matrix order
+                        return a.ordem - b.ordem;
+                    });
+                }
+            }
+
+            this.currentMatrizUCs = matrizUCs;
+            this.renderScheduleTable(lotacoes, matrizUCs);
+        } else {
+            this.currentMatrizUCs = [];
+        }
+
+        // Apply SGE Mask: #####.####.####
+        const sgeInput = document.getElementById('form-turma').querySelector('input[name="codigo_sge"]');
+        if (sgeInput) {
+            sgeInput.addEventListener('input', (e) => {
+                let v = e.target.value.replace(/\D/g, '');
+                if (v.length > 13) v = v.substring(0, 13);
+
+                if (v.length > 9) {
+                    v = v.replace(/^(\d{5})(\d{4})(\d+)/, '$1.$2.$3');
+                } else if (v.length > 5) {
+                    v = v.replace(/^(\d{5})(\d+)/, '$1.$2');
+                }
+                e.target.value = v;
+            });
+        }
+    },
+
+    onCursoChange(select) {
+        const cursoId = select.value;
+        if (!cursoId) return;
+
+        const courses = this.cachedCourses || app.state.courses || [];
+        const curso = courses.find(c => c.id === cursoId);
+
+        if (curso && curso.matriz_id) {
+            const matrizSelect = document.querySelector('select[name="matriz_id"]');
+            if (matrizSelect) {
+                matrizSelect.value = curso.matriz_id;
+                this.onMatrizChange(matrizSelect);
+
+                // Visual feedback
+                ui.toast(`Matriz ${curso.matriz_id} auto-selecionada.`, 'info');
+            }
+        }
+    },
+
+    async onMatrizChange(select) {
+        const matrizId = select.value;
+        if (!matrizId) return;
+
+        ui.toast('Carregando UCs da matriz...', 'info');
+        const { data: ucs } = await supabase.from('matriz_ucs')
+            .select('*, unidades_curriculares(*)')
+            .eq('matriz_id', matrizId)
+            .order('ordem');
+
+        this.currentMatrizUCs = ucs.map(item => ({ ...item.unidades_curriculares, ordem: item.ordem }));
+
+        // Render Empty Schedule Table
+        this.renderScheduleTable(this.currentMatrizUCs.map(uc => ({ uc_id: uc.id })), this.currentMatrizUCs);
+    },
+
+    renderScheduleTable(lotacoes, ucs) {
+        const tbody = document.getElementById('schedule-body');
+        if (!ucs.length) return;
+
+        const teachers = app.state.teachers || [];
+
+        // Merge logic: UCs are the master list. Lotacoes fill in the gaps.
+        const rows = ucs.map((uc, index) => {
+            const lotacao = lotacoes.find(l => l.uc_id === uc.id) || {};
+
+            return `
+                <tr class="hover:bg-slate-50 group" data-uc-id="${uc.id}">
+                    <td class="p-3 text-slate-500 font-mono text-xs">
+                        <div class="flex items-center gap-2">
+                            <span class="w-4 text-center">${index + 1}</span>
+                            <div class="flex flex-col">
+                                <button type="button" onclick="app.turmasView.moveUC(${index}, -1)" class="p-0.5 text-slate-400 hover:text-primary hover:bg-slate-100 rounded leading-none ${index === 0 ? 'invisible' : ''}" title="Mover para cima">
+                                    <i class="ph ph-caret-up text-xs"></i>
+                                </button>
+                                <button type="button" onclick="app.turmasView.moveUC(${index}, 1)" class="p-0.5 text-slate-400 hover:text-primary hover:bg-slate-100 rounded leading-none ${index === ucs.length - 1 ? 'invisible' : ''}" title="Mover para baixo">
+                                    <i class="ph ph-caret-down text-xs"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="p-3 font-medium text-slate-700">${uc.nome}</td>
+                    <td class="p-3 text-slate-500">${uc.carga_horaria || uc.horas || 0}h</td>
+                    <td class="p-3">
+                        <input type="date" name="start_${uc.id}" value="${lotacao.data_inicio || ''}" class="input-field text-xs py-1 px-2 w-32 border-transparent bg-transparent hover:bg-white hover:border-slate-300 focus:bg-white focus:border-primary transition-all">
+                    </td>
+                    <td class="p-3">
+                        <input type="date" name="end_${uc.id}" value="${lotacao.data_fim || ''}" class="input-field text-xs py-1 px-2 w-32 border-transparent bg-transparent hover:bg-white hover:border-slate-300 focus:bg-white focus:border-primary transition-all">
+                    </td>
+                    <td class="p-3">
+                        <select name="docente_${uc.id}" class="input-field text-xs py-1 px-2 w-full border-transparent bg-transparent hover:bg-white hover:border-slate-300 focus:bg-white focus:border-primary transition-all">
+                            <option value="">Selecione...</option>
+                            ${teachers.filter(t => {
+                // Always show the currently selected teacher
+                if (lotacao.docente_id === t.id) return true;
+
+                // Get UC area
+                const ucArea = uc.area_tecnologica;
+
+                // Normalize to array and handle empty cases
+                let ucAreasList = [];
+                if (Array.isArray(ucArea)) {
+                    ucAreasList = ucArea;
+                } else if (ucArea && ucArea !== 'Geral') {
+                    ucAreasList = [ucArea];
+                }
+
+                // If list is empty or generic, show all
+                if (ucAreasList.length === 0) return true;
+
+                // Check intersection: Teacher has AT LEAST one area required by UC
+                return t.docentes_areas?.some(da => {
+                    const teacherAreaName = da.areas_tecnologicas?.nome;
+                    return ucAreasList.includes(teacherAreaName);
+                });
+            }).map(d => `<option value="${d.id}" ${lotacao.docente_id === d.id ? 'selected' : ''}>${d.nome}</option>`).join('')}
+                        </select>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+
+        tbody.innerHTML = rows;
+    },
+
+    /**
+     * Check if a date is a Brazilian national holiday
+     * @param {dayjs.Dayjs} date - Date to check
+     * @returns {boolean} - True if it's a holiday
+     */
+    isBrazilianHoliday(date) {
+        const year = date.year();
+        // Check fixed holidays (Day/Month)
+        const dayMonth = date.format('DD/MM');
+        const fixedHolidays = [
+            '01/01', // Ano Novo
+            '19/03', // São José (Ceará)
+            '25/03', // Data Magna (Ceará)
+            '21/04', // Tiradentes
+            '01/05', // Dia do Trabalho
+            '07/09', // Independência
+            '12/10', // Padroeira
+            '02/11', // Finados
+            '15/11', // Proclamação da República
+            '25/12'  // Natal
+        ];
+
+        if (fixedHolidays.includes(dayMonth)) {
+            return true;
+        }
+
+        // Mobile holidays (based on Easter - Páscoa)
+        const easter = this.calculateEaster(year);
+        const easterDate = window.dayjs(`${year}-${easter.month}-${easter.day}`);
+
+        // Carnaval (47 days before Easter)
+        const carnaval = easterDate.subtract(47, 'day');
+        if (date.isSame(carnaval, 'day') || date.isSame(carnaval.subtract(1, 'day'), 'day')) {
+            return true; // Segunda e Terça de Carnaval
+        }
+
+        // Sexta-feira Santa (2 days before Easter)
+        const sextaFeiraSanta = easterDate.subtract(2, 'day');
+        if (date.isSame(sextaFeiraSanta, 'day')) {
+            return true;
+        }
+
+        // Corpus Christi (60 days after Easter)
+        const corpusChristi = easterDate.add(60, 'day');
+        if (date.isSame(corpusChristi, 'day')) {
+            return true;
+        }
+
+        return false;
+    },
+
+    /**
+     * Calculate Easter date using Meeus/Jones/Butcher algorithm
+     * @param {number} year - Year to calculate
+     * @returns {object} - {month, day}
+     */
+    calculateEaster(year) {
+        const a = year % 19;
+        const b = Math.floor(year / 100);
+        const c = year % 100;
+        const d = Math.floor(b / 4);
+        const e = b % 4;
+        const f = Math.floor((b + 8) / 25);
+        const g = Math.floor((b - f + 1) / 3);
+        const h = (19 * a + b - d - g + 15) % 30;
+        const i = Math.floor(c / 4);
+        const k = c % 4;
+        const l = (32 + 2 * e + 2 * i - h - k) % 7;
+        const m = Math.floor((a + 11 * h + 22 * l) / 451);
+        const month = Math.floor((h + l - 7 * m + 114) / 31);
+        const day = ((h + l - 7 * m + 114) % 31) + 1;
+
+        return { month, day };
+    },
+
+    generateSchedule() {
+        if (!this.currentMatrizUCs || !this.currentMatrizUCs.length) {
+            ui.toast('Selecione uma matriz primeiro.', 'warning');
+            return;
+        }
+
+        const form = document.getElementById('form-turma');
+        const startStr = form.data_inicio.value;
+        const hoursPerDay = parseInt(form.horas_diarias.value) || 4;
+
+        if (!startStr) {
+            ui.toast('Defina a Data de Início na aba Dados Gerais.', 'warning');
+            ui.switchModalTab('tab-dados');
+            return;
+        }
+
+        // Get selected days
+        const daysOfWeek = [];
+        form.querySelectorAll('input[name="dias_aula"]:checked').forEach(cb => {
+            daysOfWeek.push(parseInt(cb.value));
+        });
+
+        if (!daysOfWeek.length) {
+            ui.toast('Selecione os Dias de Aula.', 'warning');
+            return;
+        }
+
+        ui.toast('Calculando cronograma (considerando feriados nacionais)...', 'info');
+
+        // Algorithm
+        let currentDate = window.dayjs(startStr);
+        const newSchedule = [];
+
+        this.currentMatrizUCs.forEach(uc => {
+            const ch = uc.carga_horaria || uc.horas || 0;
+            const daysNeeded = Math.ceil(ch / hoursPerDay);
+
+            // Find valid start date (must be a class day AND not a holiday)
+            while (!daysOfWeek.includes(currentDate.day()) || this.isBrazilianHoliday(currentDate)) {
+                currentDate = currentDate.add(1, 'day');
+            }
+            const startDate = currentDate; // Found start
+
+            // Find end date
+            let daysCount = 0;
+            let iterDate = startDate;
+            while (daysCount < daysNeeded) {
+                // Only count valid class days (not holidays)
+                if (daysOfWeek.includes(iterDate.day()) && !this.isBrazilianHoliday(iterDate)) {
+                    daysCount++;
+                }
+                if (daysCount < daysNeeded) { // Don't advance on the last day loop
+                    iterDate = iterDate.add(1, 'day');
+                }
+            }
+            const endDate = iterDate;
+
+            newSchedule.push({
+                uc_id: uc.id,
+                data_inicio: startDate.format('YYYY-MM-DD'),
+                data_fim: endDate.format('YYYY-MM-DD')
+            });
+
+            // Set next start date (day after end date)
+            currentDate = endDate.add(1, 'day');
+        });
+
+        // Update UI
+        this.renderScheduleTable(newSchedule, this.currentMatrizUCs);
+
+        // Update Previsão Término Input
+        if (newSchedule.length > 0) {
+            const lastDate = newSchedule[newSchedule.length - 1].data_fim;
+            const endInput = document.querySelector('input[name="data_fim_previsto"]');
+            if (endInput) endInput.value = lastDate;
+        }
+
+        ui.toast('Datas geradas com sucesso! (Feriados nacionais foram evitados)');
+    },
+
+    async save(e, id) {
+        e.preventDefault();
+        const f = e.target;
+        const formData = new FormData(f);
+
+        // Dias Aula e Cálculo de Datas
+        const diasAula = [];
+        f.querySelectorAll('input[name="dias_aula"]:checked').forEach(cb => diasAula.push(parseInt(cb.value)));
+
+        // Calculate actual End Date based on the schedule table inputs (safest for manual edits)
+        let maxDataFim = null;
+        const currentLotacoes = this.captureTableState(); // Use newly created helper
+
+        currentLotacoes.forEach(l => {
+            if (l.data_fim) {
+                if (!maxDataFim || l.data_fim > maxDataFim) {
+                    maxDataFim = l.data_fim;
+                }
+            }
+        });
+
+        // Fallback or override form data
+        if (!maxDataFim) maxDataFim = formData.get('data_fim_previsto');
+
+        const turmaData = {
+            codigo_sge: formData.get('codigo_sge'),
+            nome: formData.get('nome'),
+            curso_id: formData.get('curso_id'),
+            matriz_id: formData.get('matriz_id'),
+            turno: formData.get('turno'),
+            data_inicio: formData.get('data_inicio'),
+            data_fim_previsto: maxDataFim, // Set the calculated end date
+            horas_diarias: formData.get('horas_diarias'),
+            status: formData.get('status'),
+            dias_aula: JSON.stringify(diasAula)
+        };
+
+        try {
+            const savedTurma = await turmas.save(turmaData, id);
+
+            // Save Schedule (Lotacoes)
+            const lotacoes = currentLotacoes.filter(l => l.data_inicio && l.data_fim).map(l => ({
+                ...l,
+                docente_id: l.docente_id || null
+            }));
+
+            if (lotacoes.length) {
+                await turmas.saveLotacoes(savedTurma.id, lotacoes);
+            }
+
+            ui.toast('Turma salva com sucesso!');
+            ui.closeModal();
+            this.loadList(); // Refresh list
+
+        } catch (err) {
+            console.error(err);
+            ui.toast('Erro ao salvar turma: ' + err.message, 'error');
+        }
+    },
+
+    captureTableState() {
+        const rows = document.getElementById('schedule-body')?.querySelectorAll('tr[data-uc-id]') || [];
+        const lotacoes = [];
+        rows.forEach(row => {
+            const ucId = row.dataset.ucId;
+            lotacoes.push({
+                uc_id: ucId,
+                data_inicio: row.querySelector(`input[name="start_${ucId}"]`)?.value,
+                data_fim: row.querySelector(`input[name="end_${ucId}"]`)?.value,
+                docente_id: row.querySelector(`select[name="docente_${ucId}"]`)?.value
+            });
+        });
+        return lotacoes;
+    },
+
+    moveUC(index, direction) {
+        const ucs = this.currentMatrizUCs;
+        if (!ucs) return;
+
+        if (direction === -1 && index > 0) {
+            // Move Up
+            [ucs[index], ucs[index - 1]] = [ucs[index - 1], ucs[index]];
+        } else if (direction === 1 && index < ucs.length - 1) {
+            // Move Down
+            [ucs[index], ucs[index + 1]] = [ucs[index + 1], ucs[index]];
+        } else {
+            return;
+        }
+
+        // Capture state to preserve inputs
+        const currentLotacoes = this.captureTableState();
+
+        // Re-render
+        this.renderScheduleTable(currentLotacoes, ucs);
+    }
+};
