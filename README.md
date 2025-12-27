@@ -8,6 +8,13 @@
 
 ## 🆕 Histórico de Versões
 
+### v1.5 - Gestão de Ambientes (Dez/2025)
+
+- **Módulo de Ambientes**: Controle completo de salas de aula e laboratórios.
+  - **Alocação Inteligente**: Vínculo de Turmas a Ambientes com detecção automática de conflitos de horário e turno.
+  - **Filtro por UC**: Possibilidade de alocar ambientes específicos para Unidades Curriculares específicas, com ajuste automático de datas baseado no cronograma.
+  - **Relatórios**: Geração de PDFs de ocupação com detalhamento por Docente, Curso e Turno.
+
 ### v1.4 - Gestão de Calendário Avançada (Dez/2025)
 
 - **Pausas e Recessos**: Novo sistema para gestão de períodos sem aula (Férias, Recessos, Feriados Internos). O gerador de datas pula automaticamente esses períodos ao calcular o cronograma.
@@ -68,7 +75,15 @@ O coração da estrutura educacional. Permite a definição flexível e reaprove
     - **Feriados nacionais brasileiros** (fixos e móveis)
   - *Lotação de Docentes*: Alocação de professores por UC com visualização de cronograma completo.
 
-### 2. 📝 Secretaria (Em Breve)
+### 2. 🏢 Ambientes e Alocações
+
+Gestão física da instituição.
+
+- **Cadastro de Ambientes**: Salas, Lab de Informática, Oficinas.
+- **Controle de Ocupação**: Calendarização visual de uso.
+- **Relatórios**: Geração de PDFs de ocupação com detalhamento por Docente, Curso e Turno.
+
+### 3. 📝 Secretaria (Em Breve)
 
 Gestão do ciclo de vida do aluno.
 
@@ -76,7 +91,7 @@ Gestão do ciclo de vida do aluno.
 - **Turmas**: Organização logística de alunos e horários.
 - **Documentação**: Emissão de históricos e declarações.
 
-### 3. 🎓 Pedagógico (Futuro)
+### 4. 🎓 Pedagógico (Futuro)
 
 Acompanhamento do processo de ensino-aprendizagem.
 
@@ -84,7 +99,7 @@ Acompanhamento do processo de ensino-aprendizagem.
 - **Notas e Avaliações**: Sistema avaliativo parametrizável.
 - **Planos de Ensino**: Planejamento aula a aula.
 
-### 4. 📊 Dashboard Gerencial
+### 5. 📊 Dashboard Gerencial
 
 Visão holística com indicadores em tempo real para tomada de decisão rápida.
 

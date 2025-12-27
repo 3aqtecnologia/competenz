@@ -7,6 +7,7 @@ import { docentes } from './modules/docentes.js';
 import { docentesView } from './modules/docentesView.js';
 import { turmas } from './modules/turmas.js';
 import { turmasView } from './modules/turmasView.js';
+import { ambientes } from './modules/ambientes.js?v=3';
 import { ui } from './utils/ui.js';
 
 class App {
@@ -30,6 +31,7 @@ class App {
         this.docentesView = docentesView;
         this.turmas = turmas;
         this.turmasView = turmasView;
+        this.ambientes = ambientes;
         this.dashboard = { render: renderDashboard }; // Adapter
 
         // Expose UI helper globally for HTML onclick events
@@ -130,6 +132,9 @@ class App {
                 case 'pedagogico':
                     html = '<div class="card p-10 text-center text-gray-400">Módulo Pedagógico em breve...</div>';
                     // html = pedagogico.render(this.state);
+                    break;
+                case 'ambientes':
+                    html = this.ambientes.render(this.state);
                     break;
                 default:
                     html = `
