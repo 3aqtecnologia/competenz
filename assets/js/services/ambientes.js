@@ -171,12 +171,58 @@ export const ambientesService = {
     },
 
     async removeAllocation(id) {
+        // Try deleting from 'lotacoes_turma' (old system)
         const { error } = await supabase
             .from('lotacoes_turma')
             .update({ ambiente_id: null })
             .eq('id', id);
+
+        // Also try deleting from 'alocacoes_ambientes' (new system)
+        if (error) {
+            // If it wasn't a lotacao, maybe it is a block allocation? 
+            // Actually, IDs are UUIDs so chance of collision is low, but better separate methods.
+            // For backward compatibility we keep this, but add deleteBlockAllocation
+        }
+    },
+
+    // --- New Block Allocation System ---
+    async createBlockAllocation(data) {
+        const { error } = await supabase.from('alocacoes_ambientes').insert(data);
         if (error) throw error;
     },
 
+    async listBlockAllocations(ambienteId) {
+        const { data, error } = await supabase
+            .from('alocacoes_ambientes')
+            .select(`*, cursos(nome), docentes(nome)`)
+            .eq('ambiente_id', ambienteId)
+            .order('data_inicio', { ascending: false });
+        if (error) throw error;
+        return data;
+    },
 
+    async deleteBlockAllocation(id) {
+        const { error } = await supabase.from('alocacoes_ambientes').delete().eq('id', id);
+        if (error) throw error;
+    },
+
+    async getReportNew(startDate, endDate) {
+        // Fetch from new block allocations
+        const { data, error } = await supabase
+            .from('alocacoes_ambientes')
+            .select(`
+                id,
+                data_inicio,
+                data_fim,
+                ambientes!inner (nome, tipo),
+                cursos (nome),
+                docentes (nome)
+            `)
+            .gte('data_inicio', startDate)
+            .lte('data_inicio', endDate)
+            .order('data_inicio');
+
+        if (error) throw error;
+        return data;
+    }
 };

@@ -84,8 +84,13 @@ export const ambientes = {
                     ${a.recursos.split(',').length > 3 ? '<span class="text-[10px] text-slate-400">...</span>' : ''}
                 </div>` : '<div class="mb-4 text-xs text-slate-300 italic">Sem recursos listados</div>'}
 
-                <div class="pt-3 border-t border-slate-100 mt-auto text-center text-blue-600 font-medium text-xs group-hover:underline flex items-center justify-center gap-1">
-                    <i class="ph-bold ph-calendar-plus"></i> Gerenciar Alocações
+                <div class="pt-3 border-t border-slate-100 mt-auto text-center font-medium text-xs flex items-center justify-between px-2">
+                    <button class="text-slate-500 hover:text-slate-800 flex items-center gap-1 transition-colors" onclick="event.stopPropagation(); app.ambientes.generateChecklist('${a.id}')">
+                         <i class="ph ph-check-square"></i> Checklist
+                    </button>
+                    <button class="text-blue-600 hover:text-blue-800 flex items-center gap-1 transition-colors group-hover:underline">
+                         Gerenciar Alocação <i class="ph-bold ph-arrow-right"></i>
+                    </button>
                 </div>
 
                 <button onclick="event.stopPropagation(); app.ambientes.openModal('${a.id}')" 
@@ -229,7 +234,8 @@ export const ambientes = {
 
         try {
             ui.toast('Buscando dados...', 'info');
-            const data = await ambientesService.getReport(start, end);
+            // Use new service method
+            const data = await ambientesService.getReportNew(start, end);
 
             if (!data || !data.length) {
                 ui.toast('Nenhum dado encontrado no período selecionado.', 'warning');
@@ -238,9 +244,9 @@ export const ambientes = {
 
             ui.toast('Gerando PDF...', 'info');
 
-            // Render PDF Content in Memory
             const reportEl = document.createElement('div');
             reportEl.className = 'p-8 bg-white text-slate-800 font-sans';
+            // Same Header ...
             reportEl.innerHTML = `
                 <!-- Header -->
                 <div class="flex justify-between items-end mb-8 pb-4 border-b-2 border-slate-800">
@@ -256,45 +262,33 @@ export const ambientes = {
                     </div>
                 </div>
 
-                <!-- Table -->
                 <table class="w-full text-xs text-left mb-8">
                     <thead class="bg-slate-100 text-slate-600 border-b-2 border-slate-200 uppercase tracking-wider font-bold">
                         <tr>
-                            <th class="p-3">Data</th>
+                            <th class="p-3">Período</th>
                             <th class="p-3">Ambiente</th>
                             <th class="p-3">Curso</th>
                             <th class="p-3">Docente</th>
-                            <th class="p-3 text-center">Turno</th>
                         </tr>
                     </thead>
                     <tbody class="text-slate-700">
                         ${data.map(r => `
                             <tr class="border-b border-slate-100 hover:bg-slate-50">
                                 <td class="p-3 whitespace-nowrap font-medium text-slate-900">
-                                     ${window.dayjs(r.data_inicio).format('DD/MM/YY')}
-                                     ${r.data_inicio !== r.data_fim ? '<span class="text-slate-400 mx-1">➜</span>' + window.dayjs(r.data_fim).format('DD/MM/YY') : ''}
+                                     ${window.dayjs(r.data_inicio.slice(0, 10)).format('DD/MM/YY')}
+                                     <span class="text-slate-400 mx-1">➜</span>
+                                     ${window.dayjs(r.data_fim.slice(0, 10)).format('DD/MM/YY')}
                                 </td>
                                 <td class="p-3 font-bold">${r.ambientes.nome} <span class="font-normal text-[10px] text-slate-400 block">${r.ambientes.tipo}</span></td>
-                                <td class="p-3">${r.turmas.cursos?.nome || ''}</td>
-                                <td class="p-3 font-medium">${r.docentes?.nome || '<span class="text-slate-300">-</span>'}</td>
-                                <td class="p-3 text-center">
-                                    <span class="px-2 py-1 rounded text-[10px] font-bold uppercase bg-slate-100 text-slate-600 border">
-                                        ${r.turmas.turno}
-                                    </span>
-                                </td>
+                                <td class="p-3">${r.cursos?.nome || '-'}</td>
+                                <td class="p-3 font-medium">${r.docentes?.nome || '-'}</td>
                             </tr>
                         `).join('')}
                     </tbody>
                 </table>
-
-                <!-- Footer -->
                 <div class="flex justify-between items-center pt-4 border-t border-slate-200">
-                    <div class="text-[10px] text-slate-400">
-                        Competenz Tecnologia Educacional
-                    </div>
-                    <div class="text-[10px] text-slate-400">
-                        Gerado em ${new Date().toLocaleString('pt-BR')}
-                    </div>
+                    <div class="text-[10px] text-slate-400">Competenz Tecnologia Educacional</div>
+                    <div class="text-[10px] text-slate-400">Gerado em ${new Date().toLocaleString('pt-BR')}</div>
                 </div>
             `;
 
@@ -328,25 +322,33 @@ export const ambientes = {
         `, 'modal-lg');
 
         try {
-            const matches = await ambientesService.matches(ambienteId);
-            // We need classes (Turmas) to populate select. 
-            // We access global app.state.classes which is loaded by App.
-            const activeTurmas = app.state.classes ? app.state.classes.filter(t => t.status !== 'Concluída') : [];
+            // Load Data using Promises
+            const [allocs, teachersRes, coursesRes] = await Promise.all([
+                ambientesService.listBlockAllocations(ambienteId),
+                // Try from state or fetch
+                app.state.teachers ? { data: app.state.teachers } : import('../services/supabase.js').then(m => m.supabase.from('docentes').select('id, nome')),
+                app.state.courses ? { data: app.state.courses } : import('../services/supabase.js').then(m => m.supabase.from('cursos').select('id, nome'))
+            ]);
 
-            this.renderAllocationsContent(ambienteId, matches, activeTurmas);
+            // Handle response structure differences
+            const teachers = Array.isArray(teachersRes.data) ? teachersRes.data : (app.state.teachers || []);
+            const courses = Array.isArray(coursesRes.data) ? coursesRes.data : (app.state.courses || []);
+
+            this.renderAllocationsContent(ambienteId, allocs || [], teachers, courses);
         } catch (err) {
+            console.error(err);
             const el = document.getElementById('allocations-content');
-            if (el) el.innerHTML = ux.renderError('Erro ao carregar alocações.');
+            if (el) el.innerHTML = ux.renderError('Erro ao carregar alocações. ' + err.message);
         }
     },
 
-    renderAllocationsContent(ambienteId, matches, turmas) {
+    renderAllocationsContent(ambienteId, allocs, teachers, courses) {
         const container = document.getElementById('allocations-content');
         if (!container) return;
 
         const today = new Date().toISOString().split('T')[0];
-        const future = matches.filter(m => m.data_inicio >= today);
-        const past = matches.filter(m => m.data_inicio < today);
+        const future = allocs.filter(m => m.data_inicio >= today);
+        const past = allocs.filter(m => m.data_inicio < today);
 
         const renderTable = (rows) => {
             if (!rows.length) return '<div class="text-xs text-slate-400 italic p-3 bg-slate-50 rounded border border-slate-100 text-center">Nenhum agendamento neste período.</div>';
@@ -355,9 +357,9 @@ export const ambientes = {
                 <table class="w-full text-xs text-left">
                     <thead class="bg-slate-50 text-slate-500 font-semibold border-b border-slate-200">
                         <tr>
-                            <th class="p-2">Início</th>
-                            <th class="p-2">Turma</th>
-                            <th class="p-2 text-center">Turno</th>
+                            <th class="p-2">Período</th>
+                            <th class="p-2">Curso</th>
+                            <th class="p-2">Docente</th>
                             <th class="p-2 w-8"></th>
                         </tr>
                     </thead>
@@ -365,20 +367,13 @@ export const ambientes = {
                         ${rows.map(r => `
                             <tr>
                                 <td class="p-2 whitespace-nowrap">
-                                    <span class="font-mono text-slate-600">${window.dayjs(r.data_inicio).format('DD/MM/YY')}</span>
-                                    <span class="text-[10px] text-slate-400 block">${window.dayjs(r.data_fim).format('DD/MM/YY')}</span>
+                                    <span class="font-mono text-slate-600">${window.dayjs(r.data_inicio.slice(0, 10)).format('DD/MM/YY')}</span>
+                                    <span class="text-[10px] text-slate-400 block">até ${window.dayjs(r.data_fim.slice(0, 10)).format('DD/MM/YY')}</span>
                                 </td>
-                                <td class="p-2">
-                                    <div class="font-bold text-slate-700">${r.turmas?.codigo_sge || '?'}</div>
-                                    <div class="text-[10px] text-slate-500 truncate max-w-[120px]">${r.turmas?.cursos?.nome || ''}</div>
-                                </td>
+                                <td class="p-2 font-bold text-slate-700">${r.cursos?.nome || '-'}</td>
+                                <td class="p-2 text-slate-600">${r.docentes?.nome || '-'}</td>
                                 <td class="p-2 text-center">
-                                    <span class="px-1.5 py-0.5 rounded text-[10px] bg-blue-50 text-blue-700 font-bold uppercase tracking-wider">
-                                        ${r.turmas?.turno || '-'}
-                                    </span>
-                                </td>
-                                <td class="p-2 text-center">
-                                    <button onclick="app.ambientes.removeSingleAlloc('${r.id}', '${ambienteId}')" class="text-slate-400 hover:text-red-500 transition-colors" title="Liberar este dia">
+                                    <button onclick="app.ambientes.removeBlockAlloc('${r.id}', '${ambienteId}')" class="text-slate-400 hover:text-red-500 transition-colors" title="Remover">
                                         <i class="ph ph-trash"></i>
                                     </button>
                                 </td>
@@ -400,17 +395,18 @@ export const ambientes = {
                     
                     <form onsubmit="app.ambientes.submitAlloc(event, '${ambienteId}')" class="space-y-4">
                         <div class="input-group mb-0">
-                            <label class="input-label text-blue-800">Selecione a Turma</label>
-                            <select name="turma_id" class="input-field text-sm bg-white" required onchange="app.ambientes.onTurmaSelect(event)">
+                            <label class="input-label text-blue-800">Curso</label>
+                            <select name="curso_id" class="input-field text-sm bg-white" required>
                                 <option value="">Selecione...</option>
-                                ${turmas.map(t => `<option value="${t.id}">${t.codigo_sge || t.codigo} - ${t.cursos?.nome || t.nome}</option>`).join('')}
+                                ${courses.map(c => `<option value="${c.id}">${c.nome}</option>`).join('')}
                             </select>
                         </div>
 
-                        <div class="input-group mb-0">
-                            <label class="input-label text-blue-800">Unidade Curricular (Opcional)</label>
-                            <select name="uc_id" class="input-field text-sm bg-white text-slate-500" disabled onchange="app.ambientes.onUCSelect(event)">
-                                <option value="">Selecione a Turma primeiro...</option>
+                         <div class="input-group mb-0">
+                            <label class="input-label text-blue-800">Docente</label>
+                            <select name="docente_id" class="input-field text-sm bg-white" required>
+                                <option value="">Selecione...</option>
+                                ${teachers.map(t => `<option value="${t.id}">${t.nome}</option>`).join('')}
                             </select>
                         </div>
                         
@@ -425,16 +421,9 @@ export const ambientes = {
                             </div>
                         </div>
 
-                        <div class="flex gap-2 pt-2">
-                            <button type="submit" class="btn btn-primary btn-sm flex-1 shadow-sm">
-                                Confirmar Alocação
-                            </button>
-                            <button type="button" onclick="app.ambientes.clearAlloc(event, '${ambienteId}')" 
-                                    class="btn bg-white border border-red-200 text-red-600 hover:bg-red-50 btn-sm transition-colors" 
-                                    title="Remover alocação">
-                                <i class="ph-bold ph-trash"></i>
-                            </button>
-                        </div>
+                        <button type="submit" class="btn btn-primary btn-sm w-full shadow-sm mt-2">
+                            Confirmar Alocação
+                        </button>
                     </form>
                 </div>
 
@@ -457,163 +446,37 @@ export const ambientes = {
         `;
     },
 
-    async onTurmaSelect(e) {
-        const id = e.target.value;
-        const form = e.target.closest('form');
-        const ucSelect = form.uc_id;
+    async submitAlloc(e, ambienteId) {
+        e.preventDefault();
+        const f = e.target;
+        const data = {
+            ambiente_id: ambienteId,
+            curso_id: f.curso_id.value,
+            docente_id: f.docente_id.value,
+            data_inicio: f.start.value,
+            data_fim: f.end.value
+        };
 
-        // Reset UC Select
-        ucSelect.innerHTML = '<option value="">Todas (Cronograma Completo)</option>';
-        ucSelect.disabled = true;
-        ucSelect.classList.add('text-slate-500');
-
-        const turma = app.state.classes.find(t => t.id === id);
-        if (turma) {
-            // Default Dates from Turma
-            if (turma.data_inicio) form.start.value = window.dayjs(turma.data_inicio).format('YYYY-MM-DD');
-            if (turma.data_fim_previsto) form.end.value = window.dayjs(turma.data_fim_previsto).format('YYYY-MM-DD');
-
-            // Load UCs for this Turma
-            try {
-                ui.toast('Carregando UCs...', 'info');
-                const ucs = await ambientesService.getTurmaUCs(id);
-                if (ucs && ucs.length > 0) {
-                    ucSelect.innerHTML = '<option value="">Todas (Cronograma Completo)</option>' +
-                        ucs.map(u => `<option value="${u.id}">${u.nome}</option>`).join('');
-                    ucSelect.disabled = false;
-                    ucSelect.classList.remove('text-slate-500');
-                }
-            } catch (err) {
-                console.error(err);
-            }
-        }
-    },
-
-    async onUCSelect(e) {
-        const ucId = e.target.value;
-        const form = e.target.closest('form');
-        const turmaId = form.turma_id.value;
-
-        if (!ucId) {
-            // Revert to Turma Dates
-            const turma = app.state.classes.find(t => t.id === turmaId);
-            if (turma) {
-                if (turma.data_inicio) form.start.value = window.dayjs(turma.data_inicio).format('YYYY-MM-DD');
-                if (turma.data_fim_previsto) form.end.value = window.dayjs(turma.data_fim_previsto).format('YYYY-MM-DD');
-            }
+        if (data.data_inicio > data.data_fim) {
+            ui.toast('Data Início não pode ser maior que Data Fim', 'warning');
             return;
         }
 
         try {
-            const range = await ambientesService.getUCDates(turmaId, ucId);
-            if (range && range.start && range.end) {
-                // Force format to ensure compatibility with input[type=date]
-                const s = window.dayjs(range.start).format('YYYY-MM-DD');
-                const e = window.dayjs(range.end).format('YYYY-MM-DD');
-
-                form.start.value = s;
-                form.end.value = e;
-                ui.toast(`Datas ajustadas para o período da UC: ${window.dayjs(s).format('DD/MM/YY')} a ${window.dayjs(e).format('DD/MM/YY')}`);
-            } else {
-                ui.toast('Nenhuma data encontrada para esta UC no cronograma.', 'warning');
-            }
-        } catch (err) {
-            console.error(err);
-            ui.toast('Erro ao buscar datas da UC.', 'error');
-        }
-    },
-
-    async submitAlloc(e, ambienteId) {
-        e.preventDefault();
-        const f = e.target;
-        const turmaId = f.turma_id.value;
-        const ucId = f.uc_id.value || null;
-        const start = f.start.value;
-        const end = f.end.value;
-
-        // Conflict check
-        const turma = app.state.classes.find(t => t.id === turmaId);
-        const turno = turma?.turno || 'Integral';
-
-        try {
-            const conflict = await ambientesService.checkConflict(ambienteId, start, end, turno);
-            if (conflict) {
-                if (conflict.turmas.id !== turmaId) {
-                    ui.toast(`Conflito com Turma ${conflict.turmas.codigo_sge} (${conflict.turmas.turno}).`, 'error');
-                    return;
-                }
-            }
-
-            const result = await ambientesService.assign(ambienteId, turmaId, start, end, ucId);
-
-            if (result && result.length > 0) {
-                ui.toast(`Sucesso! ${result.length} aulas alocadas.`);
-                this.openAllocations(ambienteId);
-            } else {
-                ui.toast('Atenção: Nenhuma aula encontrada para esta turma neste período. Verifique o cronograma.', 'warning');
-            }
-        } catch (err) {
-            ui.toast(err.message, 'error');
-        }
-    },
-
-    async clearAlloc(e, ambienteId) {
-        const f = e.target.closest('form');
-        const turmaId = f.turma_id.value;
-        const start = f.start.value;
-        const end = f.end.value;
-
-        if (!turmaId) { ui.toast('Selecione uma turma para limpar.', 'warning'); return; }
-        if (!confirm('Remover alocação desta turma no período?')) return;
-
-        try {
-            const res = await ambientesService.clear(turmaId, start, end);
-            ui.toast('Alocação removida.');
+            await ambientesService.createBlockAllocation(data);
+            ui.toast('Alocação registrada com sucesso!');
             this.openAllocations(ambienteId);
         } catch (err) {
-            ui.toast(err.message, 'error');
+            console.error(err);
+            ui.toast('Erro ao salvar: ' + err.message, 'error');
         }
     },
 
-    editSingleAlloc(id, currentAmbienteId, date, turmaCode) {
-        const formattedDate = window.dayjs(date).format('DD/MM/YYYY');
-        const ambientesList = this.state.list.filter(a => a.status !== 'Inativo');
-
-        ui.openModalWindow('Alterar Sala', `
-            <div class="space-y-4">
-                <div class="bg-blue-50 p-3 rounded-lg border border-blue-100">
-                    <p class="text-sm text-blue-800 font-bold flex items-center gap-2">
-                        <i class="ph-fill ph-calendar-check"></i> ${formattedDate}
-                    </p>
-                    <p class="text-xs text-blue-600 mt-1">Turma: ${turmaCode}</p>
-                </div>
-
-                <form onsubmit="app.ambientes.submitEditSingleAlloc(event, '${id}', '${currentAmbienteId}')">
-                    <div class="input-group">
-                        <label class="input-label">Novo Ambiente</label>
-                        <select name="new_ambiente_id" class="input-field" required>
-                             ${ambientesList.map(a => `<option value="${a.id}" ${a.id === currentAmbienteId ? 'selected' : ''}>${a.nome} (${a.capacidade} lug.)</option>`).join('')}
-                        </select>
-                    </div>
-                    
-                    <div class="flex justify-end pt-4 border-t border-slate-100 mt-4">
-                         <button type="button" onclick="ui.closeModal()" class="btn btn-secondary mr-2">Cancelar</button>
-                         <button type="submit" class="btn btn-primary">Salvar Alteração</button>
-                    </div>
-                </form>
-            </div>
-        `);
-    },
-
-    async submitEditSingleAlloc(e, id, oldAmbienteId) {
-        e.preventDefault();
-        const newAmbienteId = e.target.new_ambiente_id.value;
-
+    async removeBlockAlloc(id, ambienteId) {
+        if (!confirm('Remover esta alocação?')) return;
         try {
-            await ambientesService.updateSingleAllocation(id, newAmbienteId);
-            ui.toast('Alocação atualizada.');
-            ui.closeModal();
-            this.openAllocations(oldAmbienteId);
+            await ambientesService.deleteBlockAllocation(id);
+            this.openAllocations(ambienteId);
         } catch (err) {
             ui.toast('Erro: ' + err.message, 'error');
         }
@@ -627,6 +490,90 @@ export const ambientes = {
         } catch (err) {
             ui.toast('Erro: ' + err.message, 'error');
         }
+    },
+
+    generateChecklist(id) {
+        const item = this.state.list.find(x => x.id === id);
+        if (!item) return;
+
+        const resources = item.recursos ? item.recursos.split(',').map(r => r.trim()).filter(r => r) : [];
+        if (!resources.length) {
+            ui.toast('Este ambiente não possui recursos cadastrados para gerar checklist.', 'warning');
+            return;
+        }
+
+        // Generate printable view
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Checklist - ${item.nome}</title>
+                <style>
+                    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 40px; color: #333; }
+                    .header { border-bottom: 2px solid #333; padding-bottom: 20px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: flex-end; }
+                    .title { font-size: 24px; font-weight: bold; text-transform: uppercase; }
+                    .subtitle { font-size: 14px; color: #666; margin-top: 5px; }
+                    .info { font-size: 14px; margin-bottom: 15px; }
+                    .checklist-item { display: flex; align-items: center; padding: 15px 0; border-bottom: 1px solid #eee; }
+                    .checkbox { width: 20px; height: 20px; border: 2px solid #333; margin-right: 15px; border-radius: 4px; }
+                    .item-name { font-size: 16px; font-weight: 500; }
+                    .footer { margin-top: 50px; font-size: 12px; color: #888; text-align: center; border-top: 1px solid #ddd; padding-top: 20px; }
+                    .signature-box { margin-top: 50px; border-top: 1px solid #333; width: 300px; padding-top: 5px; text-align: center; }
+                    @media print {
+                        .no-print { display: none; }
+                        body { padding: 0; }
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    <div>
+                        <div class="title">Checklist de Recursos</div>
+                        <div class="subtitle">Conferência de Ambiente</div>
+                    </div>
+                    <div style="text-align: right;">
+                        <strong>${item.nome}</strong><br>
+                        ${item.tipo}
+                    </div>
+                </div>
+
+                <div class="info">
+                    <strong>Data da Conferência:</strong> ______/______/___________ &nbsp;&nbsp;&nbsp;
+                    <strong>Hora:</strong> _____:_____
+                </div>
+
+                <div class="list">
+                    ${resources.map(r => `
+                        <div class="checklist-item">
+                            <div class="checkbox"></div>
+                            <div class="item-name">${r}</div>
+                        </div>
+                    `).join('')}
+                    
+                    <!-- Extra Empty Lines -->
+                    <div class="checklist-item">
+                        <div class="checkbox"></div>
+                        <div class="item-name" style="color: #ccc; font-style: italic;">Observações: ________________________________________________</div>
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; margin-top: 60px;">
+                    <div class="signature-box">Responsável pela Conferência</div>
+                    <div class="signature-box">Responsável pelo Ambiente</div>
+                </div>
+
+                <div class="footer">
+                    Documento gerado pelo SGP em ${new Date().toLocaleString('pt-BR')}
+                </div>
+
+                <script>
+                    window.onload = function() { window.print(); }
+                </script>
+            </body>
+            </html>
+        `);
+        printWindow.document.close();
     }
 };
 
