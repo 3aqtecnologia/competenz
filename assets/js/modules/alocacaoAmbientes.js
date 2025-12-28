@@ -15,7 +15,7 @@ export const alocacaoAmbientes = {
                         <p class="text-slate-500">Planejamento de Salas por Turma e Unidade Curricular</p>
                     </div>
                     <div class="flex gap-2">
-                        <button onclick="app.navigate('ambientes')" class="btn btn-white text-slate-600 border border-slate-200 hover:bg-slate-50">
+                        <button onclick="app.navigateToTab('planejamento', 'ambientes')" class="btn btn-white text-slate-600 border border-slate-200 hover:bg-slate-50">
                             <i class="ph ph-arrow-left"></i> Voltar para Ambientes
                         </button>
                     </div>
@@ -303,6 +303,20 @@ export const alocacaoAmbientes = {
             data_fim: f.data_fim.value,
             curso_id: turma?.curso_id || null
         };
+
+        // Try to find teacher for this UC/Turma to persist in allocation (for reports)
+        try {
+            const { data: teacherAlloc } = await import('../services/supabase.js').then(m => m.supabase
+                .from('lotacao_docente')
+                .select('docente_id')
+                .eq('turma_id', turmaId)
+                .eq('uc_id', ucId)
+                .single()
+            );
+            if (teacherAlloc) {
+                data.docente_id = teacherAlloc.docente_id;
+            }
+        } catch (e) { console.log('Teacher not found for auto-link', e); }
 
         try {
             await ambientesService.createBlockAllocation(data); // Reusing creating method

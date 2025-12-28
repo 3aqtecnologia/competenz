@@ -584,6 +584,15 @@ select.input-field {
     max-width: 900px;
 }
 
+.modal-panel.modal-xl {
+    max-width: 1200px;
+}
+
+.modal-panel.modal-full {
+    max-width: 98vw;
+    height: 95vh;
+}
+
 /* UX: Input Hint */
 .input-hint {
     font-size: 0.75rem;

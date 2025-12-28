@@ -271,6 +271,7 @@ export const ambientes = {
                             <th class="p-3">Período</th>
                             <th class="p-3">Ambiente</th>
                             <th class="p-3">Curso</th>
+                            <th class="p-3">Turno</th>
                             <th class="p-3">Docente</th>
                         </tr>
                     </thead>
@@ -284,6 +285,7 @@ export const ambientes = {
                                 </td>
                                 <td class="p-3 font-bold">${r.ambientes.nome} <span class="font-normal text-[10px] text-slate-400 block">${r.ambientes.tipo}</span></td>
                                 <td class="p-3">${r.cursos?.nome || '-'}</td>
+                                <td class="p-3"><span class="bg-slate-100 px-2 py-1 rounded text-[10px] uppercase font-bold text-slate-600">${r.turmas?.turno || '-'}</span></td>
                                 <td class="p-3 font-medium">${r.docentes?.nome || '-'}</td>
                             </tr>
                         `).join('')}

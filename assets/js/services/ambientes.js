@@ -305,7 +305,8 @@ export const ambientesService = {
                 data_fim,
                 ambientes!inner (nome, tipo),
                 cursos (nome),
-                docentes (nome)
+                docentes (nome),
+                turmas (nome, turno)
             `)
             .gte('data_inicio', startDate)
             .lte('data_inicio', endDate)
