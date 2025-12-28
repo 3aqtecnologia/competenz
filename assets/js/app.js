@@ -88,15 +88,26 @@ class App {
 
     /* === NAVIGATION === */
     navigate(viewName) {
-        this.state.view = viewName;
-
-        // Update Sidebar UI
+        // Update Sidebar UI with Toggle Logic
         document.querySelectorAll('.nav-item').forEach(el => {
-            el.classList.remove('active');
-            if (el.getAttribute('onclick')?.includes(viewName)) {
-                el.classList.add('active');
+            const onClick = el.getAttribute('onclick');
+            // Loose match to catch simple string usage
+            const isMatch = onClick && onClick.includes(`navigate('${viewName}')`);
+
+            if (isMatch) {
+                if (el.classList.contains('active')) {
+                    el.classList.toggle('collapsed');
+                } else {
+                    el.classList.remove('collapsed');
+                    el.classList.add('active');
+                }
+            } else {
+                el.classList.remove('active');
+                el.classList.remove('collapsed');
             }
         });
+
+        this.state.view = viewName;
 
         // Close Mobile Menu if open
         const sidebar = document.querySelector('.sidebar');
@@ -105,6 +116,28 @@ class App {
         }
 
         this.renderView(viewName);
+    }
+
+    navigateToTab(viewName, tabName) {
+        // 1. Update Module State to ensure correct initial render
+        if (this[viewName]) {
+            this[viewName].currentTab = tabName;
+        }
+
+        // 2. Perform Main Navigation or Content Refresh
+        if (this.state.view !== viewName) {
+            this.navigate(viewName);
+        } else {
+            this.renderView(viewName);
+        }
+
+        // 3. Highlight Sub-Item
+        document.querySelectorAll('.nav-sub-item').forEach(el => {
+            el.classList.remove('active');
+            if (el.getAttribute('onclick')?.includes(`'${tabName}'`)) {
+                el.classList.add('active');
+            }
+        });
     }
 
     renderView(viewName) {

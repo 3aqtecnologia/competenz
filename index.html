@@ -48,9 +48,32 @@
                     <li><a class="nav-item" onclick="app.navigate('pedagogico')">
                             <i class="ph ph-chalkboard-teacher"></i> Pedagógico
                         </a></li>
-                    <li><a class="nav-item" onclick="app.navigate('planejamento')">
+                    <li>
+                        <a class="nav-item" onclick="app.navigate('planejamento')">
                             <i class="ph ph-briefcase"></i> Planejamento
-                        </a></li>
+                            <i class="ph ph-caret-down nav-chevron"></i>
+                        </a>
+                        <ul class="nav-sub-menu">
+                            <li><a class="nav-sub-item" onclick="app.navigateToTab('planejamento', 'cursos')">
+                                    Cursos
+                                </a></li>
+                            <li><a class="nav-sub-item" onclick="app.navigateToTab('planejamento', 'matrizes')">
+                                    Matrizes
+                                </a></li>
+                            <li><a class="nav-sub-item" onclick="app.navigateToTab('planejamento', 'ucs')">
+                                    Catálogo UCs
+                                </a></li>
+                            <li><a class="nav-sub-item" onclick="app.navigateToTab('planejamento', 'docentes')">
+                                    Docentes
+                                </a></li>
+                            <li><a class="nav-sub-item" onclick="app.navigateToTab('planejamento', 'turmas')">
+                                    Turmas
+                                </a></li>
+                            <li><a class="nav-sub-item" onclick="app.navigateToTab('planejamento', 'ambientes')">
+                                    Ambientes
+                                </a></li>
+                        </ul>
+                    </li>
 
 
                     <!-- Separator for mobile/desktop logic -->

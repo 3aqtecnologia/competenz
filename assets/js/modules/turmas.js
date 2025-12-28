@@ -2,16 +2,28 @@ import { supabase } from '../services/supabase.js';
 
 export const turmas = {
     async list() {
-        const { data, error } = await supabase
-            .from('turmas')
-            .select(`
-                *,
-                matrizes (codigo, carga_horaria_total)
-            `)
-            .order('created_at', { ascending: false });
+        try {
+            const { data, error } = await supabase
+                .from('turmas')
+                .select(`
+                    *,
+                    matrizes (codigo, carga_horaria_total)
+                `)
+                .order('created_at', { ascending: false });
 
-        if (error) throw error;
-        return data;
+            if (error) throw error;
+            return data;
+        } catch (err) {
+            console.warn('[Turmas] Relation fetch failed, falling back to simple list.', err);
+            // Fallback: Fetch without join
+            const { data, error } = await supabase
+                .from('turmas')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (error) throw error;
+            return data;
+        }
     },
 
     async getById(id) {

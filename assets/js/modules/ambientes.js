@@ -575,6 +575,50 @@ export const ambientes = {
         }
     },
 
+    editSingleAlloc(id, currentAmbienteId, date, turmaCode) {
+        const formattedDate = window.dayjs(date).format('DD/MM/YYYY');
+        const ambientesList = this.state.list.filter(a => a.status !== 'Inativo');
+
+        ui.openModalWindow('Alterar Sala', `
+            <div class="space-y-4">
+                <div class="bg-blue-50 p-3 rounded-lg border border-blue-100">
+                    <p class="text-sm text-blue-800 font-bold flex items-center gap-2">
+                        <i class="ph-fill ph-calendar-check"></i> ${formattedDate}
+                    </p>
+                    <p class="text-xs text-blue-600 mt-1">Turma: ${turmaCode}</p>
+                </div>
+
+                <form onsubmit="app.ambientes.submitEditSingleAlloc(event, '${id}', '${currentAmbienteId}')">
+                    <div class="input-group">
+                        <label class="input-label">Novo Ambiente</label>
+                        <select name="new_ambiente_id" class="input-field" required>
+                             ${ambientesList.map(a => `<option value="${a.id}" ${a.id === currentAmbienteId ? 'selected' : ''}>${a.nome} (${a.capacidade} lug.)</option>`).join('')}
+                        </select>
+                    </div>
+                    
+                    <div class="flex justify-end pt-4 border-t border-slate-100 mt-4">
+                         <button type="button" onclick="ui.closeModal()" class="btn btn-secondary mr-2">Cancelar</button>
+                         <button type="submit" class="btn btn-primary">Salvar Alteração</button>
+                    </div>
+                </form>
+            </div>
+        `);
+    },
+
+    async submitEditSingleAlloc(e, id, oldAmbienteId) {
+        e.preventDefault();
+        const newAmbienteId = e.target.new_ambiente_id.value;
+
+        try {
+            await ambientesService.updateSingleAllocation(id, newAmbienteId);
+            ui.toast('Alocação atualizada.');
+            ui.closeModal();
+            this.openAllocations(oldAmbienteId);
+        } catch (err) {
+            ui.toast('Erro: ' + err.message, 'error');
+        }
+    },
+
     async removeSingleAlloc(id, ambienteId) {
         if (!confirm('Liberar este agendamento específico?')) return;
         try {

@@ -176,5 +176,7 @@ export const ambientesService = {
             .update({ ambiente_id: null })
             .eq('id', id);
         if (error) throw error;
-    }
+    },
+
+
 };

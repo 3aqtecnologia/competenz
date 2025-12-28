@@ -80,18 +80,20 @@ export const turmasView = {
         }
 
         try {
-            const list = await turmas.list();
+            const list = await turmas.list() || [];
 
             // Auto-update status based on date (Visual only)
-            const today = window.dayjs().startOf('day');
-            list.forEach(t => {
-                if (t.data_fim_previsto && t.status !== 'Concluída') {
-                    const end = window.dayjs(t.data_fim_previsto);
-                    if (today.isAfter(end)) {
-                        t.status = 'Concluída';
+            if (window.dayjs) {
+                const today = window.dayjs().startOf('day');
+                list.forEach(t => {
+                    if (t.data_fim_previsto && t.status !== 'Concluída') {
+                        const end = window.dayjs(t.data_fim_previsto);
+                        if (today.isAfter(end)) {
+                            t.status = 'Concluída';
+                        }
                     }
-                }
-            });
+                });
+            }
 
             this.cachedList = list;
             this.renderListItems(list);
@@ -133,19 +135,31 @@ export const turmasView = {
             return;
         }
 
-        target.innerHTML = list.map(t => `
+        const formatDate = (date) => {
+            if (!date) return 'N/I';
+            if (window.dayjs) return window.dayjs(date).format('DD/MM/YYYY');
+            try {
+                const [y, m, d] = date.split('-');
+                return `${d}/${m}/${y}`;
+            } catch (e) { return date; }
+        };
+
+        target.innerHTML = list.map(t => {
+            const matrixCode = t.matrizes?.codigo || (Array.isArray(t.matrizes) && t.matrizes[0]?.codigo) || 'Sem Matriz';
+
+            return `
             <div class="p-4 hover:bg-slate-50 transition-colors flex items-center justify-between group cursor-pointer" onclick="app.turmasView.openModal('${t.id}')">
                 <div class="flex items-center gap-4">
                     <div class="w-12 h-12 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center text-xl font-bold">
-                        ${t.nome.substring(0, 2).toUpperCase()}
+                        ${(t.nome || '?').substring(0, 2).toUpperCase()}
                     </div>
                     <div>
                         <div class="text-[10px] font-mono font-bold text-slate-400 tracking-wider mb-0.5">${t.codigo_sge || 'S/ CÓDIGO'}</div>
                         <h4 class="font-bold text-slate-800">${t.nome}</h4>
                         <div class="text-xs text-slate-500 flex gap-3 mt-1">
-                            <span><i class="ph ph-calendar"></i> ${window.dayjs(t.data_inicio).format('DD/MM/YYYY')}</span>
+                            <span><i class="ph ph-calendar"></i> ${formatDate(t.data_inicio)}</span>
                             <span>•</span>
-                            <span>${t.matrizes?.codigo || 'Sem Matriz'}</span>
+                            <span>${matrixCode}</span>
                             <span>•</span>
                             <span>${t.turno || 'Turno n/i'}</span>
                         </div>
@@ -156,7 +170,7 @@ export const turmasView = {
                     <i class="ph ph-caret-right text-gray-300"></i>
                 </div>
             </div>
-        `).join('');
+        `}).join('');
     },
 
     getStatusBadge(status) {
@@ -177,7 +191,6 @@ export const turmasView = {
         if (id) {
             try {
                 const data = await turmas.getById(id);
-                t = data;
                 t = data;
                 lotacoes = data.lotacoes || [];
                 this.currentPauses = data.turma_pausas || [];
@@ -236,7 +249,6 @@ export const turmasView = {
                         <input name="nome" value="${t.nome || ''}" class="text-lg font-bold text-slate-800 bg-transparent border-none p-0 focus:ring-0 w-full placeholder-slate-300" placeholder="Ex: Téc. Enfermagem 2025.1" required>
                     </div>
                     </div>
-                </div>
 
                 <!-- Tabs -->
                 <div class="px-6 pt-4 bg-slate-50 border-b border-slate-200 flex gap-4 shrink-0">
@@ -276,6 +288,10 @@ export const turmasView = {
                                     </select>
                                 </div>
                                 <div class="input-group">
+                                    <label class="input-label">Capacidade (Max. Alunos) *</label>
+                                    <input type="number" name="capacidade" value="${t.capacidade || ''}" class="input-field" min="1" placeholder="Ex: 40" required>
+                                </div>
+                                <div class="input-group">
                                     <label class="input-label">Situação</label>
                                     <select name="status" class="input-field">
                                         <option value="Planejamento" ${t.status === 'Planejamento' ? 'selected' : ''}>Planejamento</option>
@@ -295,8 +311,8 @@ export const turmasView = {
                                     <input type="date" name="data_inicio" value="${t.data_inicio || ''}" class="input-field" required>
                                 </div>
                                 <div class="input-group">
-                                    <label class="input-label">Previsão Término</label>
-                                    <input type="date" name="data_fim_previsto" value="${t.data_fim_previsto || ''}" class="input-field bg-slate-100 text-slate-500 cursor-not-allowed" readonly tabindex="-1">
+                                    <label class="input-label">Data de Término (Limite)</label>
+                                    <input type="date" name="data_fim_previsto" value="${t.data_fim_previsto || ''}" class="input-field">
                                 </div>
                                 <div class="input-group">
                                     <label class="input-label">Horas/Dia</label>
@@ -717,11 +733,15 @@ export const turmasView = {
         // Update UI
         this.renderScheduleTable(newSchedule, this.currentMatrizUCs);
 
-        // Update Previsão Término Input
+        // Update Previsão Término Input ONLY if empty (don't overwrite manual setting)
         if (newSchedule.length > 0) {
             const lastDate = newSchedule[newSchedule.length - 1].data_fim;
             const endInput = document.querySelector('input[name="data_fim_previsto"]');
-            if (endInput) endInput.value = lastDate;
+            if (endInput && !endInput.value) {
+                endInput.value = lastDate;
+            } else if (endInput && endInput.value && lastDate > endInput.value) {
+                ui.toast('Atenção: A data calculada excede o limite informado.', 'warning');
+            }
         }
 
         ui.toast('Datas geradas com sucesso! (Feriados nacionais foram evitados)');
@@ -748,8 +768,12 @@ export const turmasView = {
             }
         });
 
-        // Fallback or override form data
-        if (!maxDataFim) maxDataFim = formData.get('data_fim_previsto');
+        // Prioritize the manual End Date (Limite) if set
+        // Otherwise, fallback to the calculated max allocation date
+        let finalDataFim = formData.get('data_fim_previsto');
+        if (!finalDataFim && maxDataFim) {
+            finalDataFim = maxDataFim;
+        }
 
         const turmaData = {
             codigo_sge: formData.get('codigo_sge'),
@@ -757,8 +781,9 @@ export const turmasView = {
             curso_id: formData.get('curso_id'),
             matriz_id: formData.get('matriz_id'),
             turno: formData.get('turno'),
+            capacidade: formData.get('capacidade') ? parseInt(formData.get('capacidade')) : null,
             data_inicio: formData.get('data_inicio'),
-            data_fim_previsto: maxDataFim, // Set the calculated end date
+            data_fim_previsto: finalDataFim, // Set the final end date
             horas_diarias: formData.get('horas_diarias'),
             status: formData.get('status'),
             dias_aula: JSON.stringify(diasAula)

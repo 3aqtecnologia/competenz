@@ -8,6 +8,17 @@
 
 ## 🆕 Histórico de Versões
 
+### v1.6 - Gestão de Turmas & Capacidade (Dez/2025)
+
+- **Capacidade de Turma**: Novo campo para definição do limite máximo de alunos por turma.
+- **Data Fim Manual**:
+  - Flexibilidade para definir manualmente a "Data de Término (Limite)".
+  - O gerador de cronograma agora respeita esta data, alertando se a alocação exceder o limite, mas sem bloquear o salvamento.
+- **Robustez e Estabilidade**:
+  - **Fallback de Dados**: Sistema de recuperação automática caso a busca complexa (relacional) falhe, garantindo que a lista de turmas sempre seja carregada.
+  - **Tratamento de Datas**: Formatação segura que previne erros visuais caso bibliotecas externas falhem.
+  - **Correções de UI**: Ajustes na estrutura de modais e feedback de carregamento.
+
 ### v1.5 - Gestão de Ambientes (Dez/2025)
 
 - **Módulo de Ambientes**: Controle completo de salas de aula e laboratórios.
