@@ -8,6 +8,18 @@
 
 ## 🆕 Histórico de Versões
 
+### v1.8 - Refinamento de Relatórios e UX (Dez/2025)
+
+- **Interface de Relatório Otimizada**:
+  - Novo layout de "Agenda Executiva" para alocação de ambientes, com linha do tempo vertical clara e rápida de escanear.
+  - **Datas em Destaque**: Visualização unificada com dia em destaque e formato completo `DD/MM/YYYY` para arquivamento oficial.
+- **PDF Profissional (Print-Safe)**:
+  - Design de alto contraste (Preto sobre Branco) otimizado para impressão econômica e legibilidade máxima.
+  - Correção crítica na exibição da "Vigência", garantindo que datas de validade do relatório apareçam em qualquer impressora.
+  - Remoção de elementos puramente estéticos (sombras/gradientes) na versão impressa em favor da clareza de dados.
+- **Robustez Temporal**:
+  - Configuração global de Timezone (`America/Fortaleza`) para prevenir inconsistências de data (o bug do "dia anterior").
+
 ### v1.7 - Relatórios & Alocação Inteligente (Dez/2025)
 
 - **Relatórios Visuais de Ambientes**:

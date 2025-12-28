@@ -299,8 +299,8 @@ export const alocacaoAmbientes = {
             turma_id: turmaId,
             uc_id: ucId,
             ambiente_id: f.ambiente_id.value,
-            data_inicio: f.data_inicio.value,
-            data_fim: f.data_fim.value,
+            data_inicio: window.dayjs.tz(f.data_inicio.value, 'America/Fortaleza').format(),
+            data_fim: window.dayjs.tz(f.data_fim.value, 'America/Fortaleza').format(),
             curso_id: turma?.curso_id || null
         };
 
@@ -336,8 +336,8 @@ export const alocacaoAmbientes = {
 
         const data = {
             ambiente_id: f.ambiente_id.value,
-            data_inicio: f.data_inicio.value,
-            data_fim: f.data_fim.value
+            data_inicio: window.dayjs.tz(f.data_inicio.value, 'America/Fortaleza').format(),
+            data_fim: window.dayjs.tz(f.data_fim.value, 'America/Fortaleza').format()
         };
 
         try {

@@ -295,89 +295,125 @@ export const ambientes = {
 
     buildReportHTML(data, start, end) {
         return `
-            <div class="p-8 bg-white text-slate-800 font-sans">
-                <!-- Header with improved styling -->
-                <div class="flex justify-between items-center mb-8 pb-6 border-b-4 border-blue-600">
+            <div class="p-10 bg-white text-black font-sans min-h-[297mm]">
+                
+                <!-- 1. Print-Friendly Header -->
+                <div class="flex justify-between items-end mb-8 pb-4 border-b-2 border-black">
                     <div class="flex items-center gap-4">
-                        <div class="w-16 h-16 bg-blue-600 rounded-lg flex items-center justify-center text-white text-2xl shadow-lg">
+                        <div class="text-4xl text-black">
                             <i class="ph-bold ph-calendar-check"></i>
                         </div>
                         <div>
-                            <h1 class="text-2xl font-bold uppercase tracking-wider text-slate-800">Alocação de Ambientes</h1>
-                            <p class="text-sm font-medium text-blue-600 mt-1">SGP - Competenz Tecnologia</p>
+                            <h1 class="text-2xl font-bold uppercase tracking-tight text-black">Alocação de Ambientes</h1>
+                            <p class="text-xs font-semibold uppercase tracking-widest text-slate-500 mt-0.5">Relatório Executivo • SGP</p>
                         </div>
                     </div>
-                    <div class="text-right bg-slate-50 p-3 rounded-lg border border-slate-100">
-                         <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Período Selecionado</p>
-                         <p class="text-xl font-mono font-bold text-slate-700 leading-none">
-                            ${window.dayjs(start).format('DD/MM')} <span class="text-slate-300 mx-1">➜</span> ${window.dayjs(end).format('DD/MM/YYYY')}
+                    <div class="text-right">
+                         <p class="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-1">Vigência do Relatório</p>
+                         <p class="text-xl font-bold text-black border border-black px-3 py-1 rounded">
+                            ${window.dayjs(start).tz().format('DD/MM/YYYY')} a ${window.dayjs(end).tz().format('DD/MM/YYYY')}
                          </p>
                     </div>
                 </div>
 
-                <!-- Table with zebra striping and better spacing -->
-                <table class="w-full text-xs text-left mb-8 border-collapse">
-                    <thead class="bg-slate-100 text-slate-600 border-y-2 border-slate-200 uppercase tracking-wider font-bold">
-                        <tr>
-                            <th class="p-4 w-32">Período</th>
-                            <th class="p-4">Ambiente</th>
-                            <th class="p-4">Curso / Turma</th>
-                            <th class="p-4 w-24">Turno</th>
-                            <th class="p-4">Docente</th>
-                        </tr>
-                    </thead>
-                    <tbody class="text-slate-700 divide-y divide-slate-100">
-                        ${data.map((r, i) => {
-            const turno = r.turmas?.turno || '-';
-            let badgeClass = 'bg-slate-100 text-slate-600';
-            if (turno.includes('Manhã')) badgeClass = 'bg-yellow-50 text-yellow-700 border border-yellow-100';
-            if (turno.includes('Tarde')) badgeClass = 'bg-blue-50 text-blue-700 border border-blue-100';
-            if (turno.includes('Noite')) badgeClass = 'bg-purple-50 text-purple-700 border border-purple-100';
-            if (turno.includes('Integral')) badgeClass = 'bg-green-50 text-green-700 border border-green-100';
+                <!-- 2. Minimalist Summary -->
+                <div class="flex gap-8 mb-8 text-sm border-b border-dashed border-slate-300 pb-6">
+                    <div>
+                        <span class="block font-bold text-xl text-black">${data.length}</span>
+                        <span class="text-xs font-bold uppercase text-slate-500">Alocações</span>
+                    </div>
+                    <div>
+                        <span class="block font-bold text-xl text-black">${[...new Set(data.map(d => d.ambientes.nome))].length}</span>
+                        <span class="text-xs font-bold uppercase text-slate-500">Ambientes</span>
+                    </div>
+                    <div>
+                        <span class="block font-bold text-xl text-black">${[...new Set(data.map(d => d.docentes?.nome).filter(Boolean))].length}</span>
+                        <span class="text-xs font-bold uppercase text-slate-500">Docentes</span>
+                    </div>
+                    <div>
+                        <span class="block font-bold text-xl text-black">${[...new Set(data.map(d => d.turmas?.nome).filter(Boolean))].length}</span>
+                        <span class="text-xs font-bold uppercase text-slate-500">Turmas</span>
+                    </div>
+                </div>
 
-            return `
-                            <tr class="${i % 2 === 0 ? 'bg-white' : 'bg-slate-50'} break-inside-avoid">
-                                <td class="p-3 whitespace-nowrap font-mono text-slate-600 border-l-4 ${i % 2 === 0 ? 'border-transparent' : 'border-blue-200'}">
-                                     <div class="font-bold">${window.dayjs(r.data_inicio.slice(0, 10)).format('DD/MM')}</div>
-                                     <div class="text-[10px] text-slate-400">até ${window.dayjs(r.data_fim.slice(0, 10)).format('DD/MM')}</div>
-                                </td>
-                                <td class="p-3">
-                                    <div class="font-bold text-slate-800 text-sm">${r.ambientes.nome}</div>
-                                    <div class="text-[10px] uppercase tracking-wide text-slate-400 bg-white inline-block px-1 rounded border border-slate-100 mt-1">${r.ambientes.tipo}</div>
-                                </td>
-                                <td class="p-3">
-                                    <div class="font-medium text-slate-900">${r.cursos?.nome || '-'}</div>
-                                    ${r.turmas?.nome ? `<div class="text-[10px] text-slate-500 mt-0.5"><i class="ph-bold ph-users"></i> ${r.turmas.nome}</div>` : ''}
-                                </td>
-                                <td class="p-3">
-                                    <span class="${badgeClass} px-2 py-1 rounded text-[10px] uppercase font-bold inline-flex items-center gap-1">
-                                        ${turno !== '-' ? '<i class="ph-fill ph-clock"></i>' : ''} ${turno}
-                                    </span>
-                                </td>
-                                <td class="p-3 font-medium">
-                                    ${r.docentes?.nome ? `
-                                        <div class="flex items-center gap-2">
-                                            ${r.docentes.foto_url
-                        ? `<img src="${r.docentes.foto_url}" class="w-6 h-6 rounded-full object-cover border border-slate-200">`
-                        : `<div class="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-600">
-                                                   ${r.docentes.nome.charAt(0)}
-                                                 </div>`
-                    }
-                                            <span class="truncate max-w-[120px]" title="${r.docentes.nome}">${r.docentes.nome}</span>
-                                        </div>
-                                    ` : '<span class="text-slate-300 italic text-[10px]">Não definido</span>'}
-                                </td>
+                <!-- 3. Clean Print Table -->
+                <div class="mb-8">
+                    <table class="w-full text-xs text-left border-collapse">
+                        <thead>
+                            <tr class="border-b-2 border-black text-black uppercase tracking-wider font-bold">
+                                <th class="py-2 text-left w-32">Data</th>
+                                <th class="py-2 text-left">Ambiente</th>
+                                <th class="py-2 text-left">Curso / Turma</th>
+                                <th class="py-2 text-left">Turno</th>
+                                <th class="py-2 text-left">Docente</th>
                             </tr>
-                        `}).join('')}
-                    </tbody>
-                </table>
-                <div class="flex justify-between items-center pt-6 border-t border-slate-200 mt-auto">
-                    <div class="text-[10px] text-slate-400 flex items-center gap-2">
-                        <i class="ph-fill ph-check-circle text-green-500"></i> Documento verificado digitalmente
+                        </thead>
+                        <tbody class="text-slate-800">
+                            ${data
+                .sort((a, b) => new Date(a.data_inicio) - new Date(b.data_inicio))
+                .map((r, i) => {
+                    const turno = r.turmas?.turno || '-';
+                    const startDateObj = window.dayjs(r.data_inicio).tz();
+                    const endDateObj = window.dayjs(r.data_fim).tz();
+                    const isSameDate = startDateObj.isSame(endDateObj, 'day');
+
+                    // Simple icon logic
+                    let envTypeShort = r.ambientes.tipo === 'Laboratório' ? 'LAB' : (r.ambientes.tipo === 'Auditório' ? 'AUD' : 'SALA');
+
+                    return `
+                                <tr class="border-b border-slate-200 break-inside-avoid">
+                                    <td class="py-3 pr-2 align-top whitespace-nowrap">
+                                        <div class="flex flex-col">
+                                            <span class="font-bold text-slate-900 text-xs">${startDateObj.format('DD/MM/YYYY')}</span>
+                                            ${!isSameDate ? `
+                                                <div class="flex items-center gap-1.5 my-0.5">
+                                                    <span class="text-[9px] font-bold text-slate-400 uppercase">Até</span>
+                                                    <span class="font-bold text-slate-900 text-xs">${endDateObj.format('DD/MM/YYYY')}</span>
+                                                </div>
+                                            ` : ''}
+                                            <span class="text-[9px] font-bold uppercase text-slate-400 mt-1">${startDateObj.format('dddd')}</span>
+                                        </div>
+                                    </td>
+                                    
+                                    <td class="py-3 pr-2 align-top">
+                                        <div class="font-bold text-black">${r.ambientes.nome}</div>
+                                        <div class="text-[9px] font-bold uppercase text-slate-500 border border-slate-300 inline-block px-1 rounded mt-0.5">${envTypeShort}</div>
+                                    </td>
+
+                                    <td class="py-3 pr-2 align-top">
+                                        <div class="font-semibold text-slate-900">${r.cursos?.nome || '-'}</div>
+                                        ${r.turmas?.nome ? `<div class="text-[10px] text-slate-500 mt-0.5">Turma: <strong>${r.turmas.nome}</strong></div>` : ''}
+                                    </td>
+
+                                    <td class="py-3 pr-2 align-top">
+                                        <span class="font-medium text-slate-700">${turno}</span>
+                                    </td>
+
+                                    <td class="py-3 align-top">
+                                        ${r.docentes?.nome ? `
+                                            <div class="flex items-center gap-2">
+                                                <div class="font-bold text-black text-xs">${r.docentes.nome}</div>
+                                            </div>
+                                        ` : '<span class="text-slate-400 italic text-[10px]">--</span>'}
+                                    </td>
+                                </tr>
+                            `;
+                }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 4. Professional Footer -->
+                <div class="flex justify-between items-end pt-6 border-t font-mono text-[10px] text-slate-400">
+                    <div>
+                        <div class="flex items-center gap-2 mb-1 text-slate-500 font-bold uppercase tracking-widest">
+                            <i class="ph-fill ph-check-circle text-emerald-500"></i> Documento Oficial
+                        </div>
+                        <p>Competenz Tecnologia Educacional • SGP v1.7 • <span class="font-bold text-slate-600">Vigência: ${window.dayjs(start).format('DD/MM/YYYY')} a ${window.dayjs(end).format('DD/MM/YYYY')}</span></p>
                     </div>
                     <div class="text-right">
-                        <div class="text-[10px] font-bold text-slate-500 uppercase">Emissão</div>
-                        <div class="text-[10px] text-slate-400 font-mono">${new Date().toLocaleString('pt-BR')}</div>
+                        <p class="uppercase tracking-widest mb-1">Emitido em</p>
+                        <p class="text-slate-600 font-bold text-xs">${new Date().toLocaleString('pt-BR')}</p>
                     </div>
                 </div>
             </div>
@@ -415,11 +451,17 @@ export const ambientes = {
         ui.toast('Gerando PDF...', 'info');
 
         const opt = {
-            margin: 5,
-            filename: `Relatorio_Alocacao_${result.start}_${result.end}.pdf`,
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, logging: false },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            margin: [5, 5, 10, 5],
+            filename: `Relatorio_SGP_${window.dayjs().format('YYYY-MM-DD')}.pdf`,
+            image: { type: 'jpeg', quality: 1.0 },
+            html2canvas: {
+                scale: 3,
+                useCORS: true,
+                logging: false,
+                letterRendering: true
+            },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape', compress: true },
+            pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
         };
         try {
             await html2pdf().set(opt).from(reportEl).save();
