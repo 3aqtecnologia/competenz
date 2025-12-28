@@ -206,10 +206,10 @@ export const ambientes = {
     },
 
     openReportModal() {
-        ui.openModalWindow('Alocação de Ambientes', `
+        ui.openModalWindow('Relatório de Alocação', `
             <div class="p-1">
-                <p class="text-sm text-slate-500 mb-4">Selecione o período para gerar o relatório de alocação de ambientes em PDF.</p>
-                <form onsubmit="app.ambientes.generateReport(event)" class="space-y-4">
+                <p class="text-sm text-slate-500 mb-4">Selecione o período para visualizar ou baixar o relatório.</p>
+                <form id="reportForm" onsubmit="return false" class="space-y-4">
                     <div class="grid grid-cols-2 gap-4">
                         <div class="input-group">
                             <label class="input-label">Data Início</label>
@@ -220,9 +220,12 @@ export const ambientes = {
                             <input name="end" type="date" class="input-field" required>
                         </div>
                     </div>
-                    <div class="flex justify-end pt-2 border-t border-slate-50 mt-4">
-                        <button type="submit" class="btn btn-primary w-full md:w-auto">
-                            <i class="ph ph-file-pdf"></i> Gerar PDF
+                    <div class="flex justify-end gap-3 pt-2 border-t border-slate-50 mt-4">
+                        <button type="button" onclick="app.ambientes.viewReport()" class="btn btn-white text-blue-600 border-blue-200 hover:bg-blue-50">
+                            <i class="ph ph-desktop"></i> Visualizar
+                        </button>
+                        <button type="button" onclick="app.ambientes.downloadPDF()" class="btn btn-primary">
+                            <i class="ph ph-file-pdf"></i> Baixar PDF
                         </button>
                     </div>
                 </form>
@@ -230,7 +233,215 @@ export const ambientes = {
         `);
     },
 
-    async generateReport(e) {
+    async fetchReportData(startVal, endVal) {
+        let start = startVal;
+        let end = endVal;
+
+        if (!start || !end) {
+            const form = document.getElementById('reportForm');
+            if (form) {
+                start = form.start.value;
+                end = form.end.value;
+            }
+        }
+
+        if (!start || !end) {
+            ui.toast('Por favor, selecione o período.', 'warning');
+            return null;
+        }
+
+        try {
+            ui.toast('Buscando dados...', 'info');
+            const data = await ambientesService.getReportNew(start, end);
+            if (!data || !data.length) {
+                ui.toast('Nenhum dado encontrado no período.', 'warning');
+                return null;
+            }
+
+            // Post-process: Fill missing teachers from 'lotacoes_docente'
+            // Identify items with turma_id and uc_id but no docente
+            const missingDocente = data.filter(d => !d.docentes && d.turma_id && d.uc_id);
+            if (missingDocente.length > 0) {
+                const turmasIds = [...new Set(missingDocente.map(d => d.turma_id))];
+
+                // We need to import supabase here or use a service method
+                // Let's use dynamic import to avoid module issues if not already imported top-level
+                const { supabase } = await import('../services/supabase.js');
+
+                const { data: lotacoes } = await supabase
+                    .from('lotacoes_turma')
+                    .select('turma_id, uc_id, docentes(nome, foto_url)')
+                    .in('turma_id', turmasIds)
+                    .not('docente_id', 'is', null);
+
+                if (lotacoes) {
+                    data.forEach(d => {
+                        if (!d.docentes && d.turma_id && d.uc_id) {
+                            const found = lotacoes.find(l => l.turma_id === d.turma_id && l.uc_id === d.uc_id);
+                            if (found && found.docentes) {
+                                d.docentes = found.docentes; // Assign { nome: '...' }
+                            }
+                        }
+                    });
+                }
+            }
+
+            return { data, start, end };
+        } catch (err) {
+            ui.toast('Erro ao buscar dados: ' + err.message, 'error');
+            return null;
+        }
+    },
+
+    buildReportHTML(data, start, end) {
+        return `
+            <div class="p-8 bg-white text-slate-800 font-sans">
+                <!-- Header with improved styling -->
+                <div class="flex justify-between items-center mb-8 pb-6 border-b-4 border-blue-600">
+                    <div class="flex items-center gap-4">
+                        <div class="w-16 h-16 bg-blue-600 rounded-lg flex items-center justify-center text-white text-2xl shadow-lg">
+                            <i class="ph-bold ph-calendar-check"></i>
+                        </div>
+                        <div>
+                            <h1 class="text-2xl font-bold uppercase tracking-wider text-slate-800">Alocação de Ambientes</h1>
+                            <p class="text-sm font-medium text-blue-600 mt-1">SGP - Competenz Tecnologia</p>
+                        </div>
+                    </div>
+                    <div class="text-right bg-slate-50 p-3 rounded-lg border border-slate-100">
+                         <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Período Selecionado</p>
+                         <p class="text-xl font-mono font-bold text-slate-700 leading-none">
+                            ${window.dayjs(start).format('DD/MM')} <span class="text-slate-300 mx-1">➜</span> ${window.dayjs(end).format('DD/MM/YYYY')}
+                         </p>
+                    </div>
+                </div>
+
+                <!-- Table with zebra striping and better spacing -->
+                <table class="w-full text-xs text-left mb-8 border-collapse">
+                    <thead class="bg-slate-100 text-slate-600 border-y-2 border-slate-200 uppercase tracking-wider font-bold">
+                        <tr>
+                            <th class="p-4 w-32">Período</th>
+                            <th class="p-4">Ambiente</th>
+                            <th class="p-4">Curso / Turma</th>
+                            <th class="p-4 w-24">Turno</th>
+                            <th class="p-4">Docente</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-slate-700 divide-y divide-slate-100">
+                        ${data.map((r, i) => {
+            const turno = r.turmas?.turno || '-';
+            let badgeClass = 'bg-slate-100 text-slate-600';
+            if (turno.includes('Manhã')) badgeClass = 'bg-yellow-50 text-yellow-700 border border-yellow-100';
+            if (turno.includes('Tarde')) badgeClass = 'bg-blue-50 text-blue-700 border border-blue-100';
+            if (turno.includes('Noite')) badgeClass = 'bg-purple-50 text-purple-700 border border-purple-100';
+            if (turno.includes('Integral')) badgeClass = 'bg-green-50 text-green-700 border border-green-100';
+
+            return `
+                            <tr class="${i % 2 === 0 ? 'bg-white' : 'bg-slate-50'} break-inside-avoid">
+                                <td class="p-3 whitespace-nowrap font-mono text-slate-600 border-l-4 ${i % 2 === 0 ? 'border-transparent' : 'border-blue-200'}">
+                                     <div class="font-bold">${window.dayjs(r.data_inicio.slice(0, 10)).format('DD/MM')}</div>
+                                     <div class="text-[10px] text-slate-400">até ${window.dayjs(r.data_fim.slice(0, 10)).format('DD/MM')}</div>
+                                </td>
+                                <td class="p-3">
+                                    <div class="font-bold text-slate-800 text-sm">${r.ambientes.nome}</div>
+                                    <div class="text-[10px] uppercase tracking-wide text-slate-400 bg-white inline-block px-1 rounded border border-slate-100 mt-1">${r.ambientes.tipo}</div>
+                                </td>
+                                <td class="p-3">
+                                    <div class="font-medium text-slate-900">${r.cursos?.nome || '-'}</div>
+                                    ${r.turmas?.nome ? `<div class="text-[10px] text-slate-500 mt-0.5"><i class="ph-bold ph-users"></i> ${r.turmas.nome}</div>` : ''}
+                                </td>
+                                <td class="p-3">
+                                    <span class="${badgeClass} px-2 py-1 rounded text-[10px] uppercase font-bold inline-flex items-center gap-1">
+                                        ${turno !== '-' ? '<i class="ph-fill ph-clock"></i>' : ''} ${turno}
+                                    </span>
+                                </td>
+                                <td class="p-3 font-medium">
+                                    ${r.docentes?.nome ? `
+                                        <div class="flex items-center gap-2">
+                                            ${r.docentes.foto_url
+                        ? `<img src="${r.docentes.foto_url}" class="w-6 h-6 rounded-full object-cover border border-slate-200">`
+                        : `<div class="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-600">
+                                                   ${r.docentes.nome.charAt(0)}
+                                                 </div>`
+                    }
+                                            <span class="truncate max-w-[120px]" title="${r.docentes.nome}">${r.docentes.nome}</span>
+                                        </div>
+                                    ` : '<span class="text-slate-300 italic text-[10px]">Não definido</span>'}
+                                </td>
+                            </tr>
+                        `}).join('')}
+                    </tbody>
+                </table>
+                <div class="flex justify-between items-center pt-6 border-t border-slate-200 mt-auto">
+                    <div class="text-[10px] text-slate-400 flex items-center gap-2">
+                        <i class="ph-fill ph-check-circle text-green-500"></i> Documento verificado digitalmente
+                    </div>
+                    <div class="text-right">
+                        <div class="text-[10px] font-bold text-slate-500 uppercase">Emissão</div>
+                        <div class="text-[10px] text-slate-400 font-mono">${new Date().toLocaleString('pt-BR')}</div>
+                    </div>
+                </div>
+            </div>
+        `;
+    },
+
+    async viewReport() {
+        const result = await this.fetchReportData();
+        if (!result) return;
+
+        const reportInnerHtml = this.buildReportHTML(result.data, result.start, result.end);
+
+        const container = `
+            <div class="flex justify-end p-4 bg-slate-50 border-b border-slate-200 sticky top-0 z-10">
+                <button onclick="app.ambientes.downloadPDF('${result.start}', '${result.end}')" class="btn btn-primary btn-sm flex items-center gap-2 shadow-sm">
+                    <i class="ph-bold ph-file-pdf"></i> Baixar Arquivo PDF
+                </button>
+            </div>
+            <div class="report-content-wrapper">
+                ${reportInnerHtml}
+            </div>
+        `;
+
+        ui.openModalWindow('Visualização de Relatório', container, 'modal-xl');
+    },
+
+    async downloadPDF(startVal, endVal) {
+        const result = await this.fetchReportData(startVal, endVal);
+        if (!result) return;
+
+        const html = this.buildReportHTML(result.data, result.start, result.end);
+        const reportEl = document.createElement('div');
+        reportEl.innerHTML = html;
+
+        ui.toast('Gerando PDF...', 'info');
+
+        const opt = {
+            margin: 5,
+            filename: `Relatorio_Alocacao_${result.start}_${result.end}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, logging: false },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+        try {
+            await html2pdf().set(opt).from(reportEl).save();
+            ui.toast('Download iniciado!');
+            // If we are in the main view (not modal view), we could close.
+            // But if we are in modal view, we shouldn't close it necessarily. 
+            // Let's check if 'reportForm' exists, if so we are likely in the small modal.
+            if (document.getElementById('reportForm')) {
+                ui.closeModal();
+            }
+        } catch (e) {
+            console.error(e);
+            ui.toast('Erro ao criar PDF', 'error');
+        }
+    },
+
+    generateReport(e) {
+        if (e) e.preventDefault();
+        this.downloadPDF();
+    },
+
+    async _deprecated_generateReport_legacy(e) {
         e.preventDefault();
         const start = e.target.start.value;
         const end = e.target.end.value;
@@ -251,49 +462,87 @@ export const ambientes = {
             reportEl.className = 'p-8 bg-white text-slate-800 font-sans';
             // Same Header ...
             reportEl.innerHTML = `
-                <!-- Header -->
-                <div class="flex justify-between items-end mb-8 pb-4 border-b-2 border-slate-800">
-                    <div>
-                        <h1 class="text-3xl font-bold uppercase tracking-wide text-slate-900">Alocação de Ambientes</h1>
-                        <p class="text-sm text-slate-500 mt-1">SGP - Sistema de Gestão Pedagógica</p>
+                <!-- Header with improved styling -->
+                <div class="flex justify-between items-center mb-8 pb-6 border-b-4 border-blue-600">
+                    <div class="flex items-center gap-4">
+                        <div class="w-16 h-16 bg-blue-600 rounded-lg flex items-center justify-center text-white text-2xl shadow-lg">
+                            <i class="ph-bold ph-calendar-check"></i>
+                        </div>
+                        <div>
+                            <h1 class="text-2xl font-bold uppercase tracking-wider text-slate-800">Alocação de Ambientes</h1>
+                            <p class="text-sm font-medium text-blue-600 mt-1">SGP - Competenz Tecnologia</p>
+                        </div>
                     </div>
-                    <div class="text-right">
-                         <p class="text-xs font-bold text-slate-400 uppercase">Período</p>
-                         <p class="text-lg font-mono font-medium text-slate-700">
-                            ${window.dayjs(start).format('DD/MM/YYYY')} <span class="text-slate-400 mx-1">até</span> ${window.dayjs(end).format('DD/MM/YYYY')}
+                    <div class="text-right bg-slate-50 p-3 rounded-lg border border-slate-100">
+                         <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Período Selecionado</p>
+                         <p class="text-xl font-mono font-bold text-slate-700 leading-none">
+                            ${window.dayjs(start).format('DD/MM')} <span class="text-slate-300 mx-1">➜</span> ${window.dayjs(end).format('DD/MM/YYYY')}
                          </p>
                     </div>
                 </div>
 
-                <table class="w-full text-xs text-left mb-8">
-                    <thead class="bg-slate-100 text-slate-600 border-b-2 border-slate-200 uppercase tracking-wider font-bold">
+                <!-- Table with zebra striping and better spacing -->
+                <table class="w-full text-xs text-left mb-8 border-collapse">
+                    <thead class="bg-slate-100 text-slate-600 border-y-2 border-slate-200 uppercase tracking-wider font-bold">
                         <tr>
-                            <th class="p-3">Período</th>
-                            <th class="p-3">Ambiente</th>
-                            <th class="p-3">Curso</th>
-                            <th class="p-3">Turno</th>
-                            <th class="p-3">Docente</th>
+                            <th class="p-4 w-32">Período</th>
+                            <th class="p-4">Ambiente</th>
+                            <th class="p-4">Curso / Turma</th>
+                            <th class="p-4 w-24">Turno</th>
+                            <th class="p-4">Docente</th>
                         </tr>
                     </thead>
-                    <tbody class="text-slate-700">
-                        ${data.map(r => `
-                            <tr class="border-b border-slate-100 hover:bg-slate-50">
-                                <td class="p-3 whitespace-nowrap font-medium text-slate-900">
-                                     ${window.dayjs(r.data_inicio.slice(0, 10)).format('DD/MM/YY')}
-                                     <span class="text-slate-400 mx-1">➜</span>
-                                     ${window.dayjs(r.data_fim.slice(0, 10)).format('DD/MM/YY')}
+                    <tbody class="text-slate-700 divide-y divide-slate-100">
+                        ${data.map((r, i) => {
+                // Turno Badge Logic
+                const turno = r.turmas?.turno || '-';
+                let badgeClass = 'bg-slate-100 text-slate-600';
+                if (turno.includes('Manhã')) badgeClass = 'bg-yellow-50 text-yellow-700 border border-yellow-100';
+                if (turno.includes('Tarde')) badgeClass = 'bg-blue-50 text-blue-700 border border-blue-100';
+                if (turno.includes('Noite')) badgeClass = 'bg-purple-50 text-purple-700 border border-purple-100';
+                if (turno.includes('Integral')) badgeClass = 'bg-green-50 text-green-700 border border-green-100';
+
+                return `
+                            <tr class="${i % 2 === 0 ? 'bg-white' : 'bg-slate-50'} break-inside-avoid">
+                                <td class="p-3 whitespace-nowrap font-mono text-slate-600 border-l-4 ${i % 2 === 0 ? 'border-transparent' : 'border-blue-200'}">
+                                     <div class="font-bold">${window.dayjs(r.data_inicio.slice(0, 10)).format('DD/MM')}</div>
+                                     <div class="text-[10px] text-slate-400">até ${window.dayjs(r.data_fim.slice(0, 10)).format('DD/MM')}</div>
                                 </td>
-                                <td class="p-3 font-bold">${r.ambientes.nome} <span class="font-normal text-[10px] text-slate-400 block">${r.ambientes.tipo}</span></td>
-                                <td class="p-3">${r.cursos?.nome || '-'}</td>
-                                <td class="p-3"><span class="bg-slate-100 px-2 py-1 rounded text-[10px] uppercase font-bold text-slate-600">${r.turmas?.turno || '-'}</span></td>
-                                <td class="p-3 font-medium">${r.docentes?.nome || '-'}</td>
+                                <td class="p-3">
+                                    <div class="font-bold text-slate-800 text-sm">${r.ambientes.nome}</div>
+                                    <div class="text-[10px] uppercase tracking-wide text-slate-400 bg-white inline-block px-1 rounded border border-slate-100 mt-1">${r.ambientes.tipo}</div>
+                                </td>
+                                <td class="p-3">
+                                    <div class="font-medium text-slate-900">${r.cursos?.nome || '-'}</div>
+                                    ${r.turmas?.nome ? `<div class="text-[10px] text-slate-500 mt-0.5"><i class="ph-bold ph-users"></i> ${r.turmas.nome}</div>` : ''}
+                                </td>
+                                <td class="p-3">
+                                    <span class="${badgeClass} px-2 py-1 rounded text-[10px] uppercase font-bold inline-flex items-center gap-1">
+                                        ${turno !== '-' ? '<i class="ph-fill ph-clock"></i>' : ''} ${turno}
+                                    </span>
+                                </td>
+                                <td class="p-3 font-medium">
+                                    ${r.docentes?.nome ? `
+                                        <div class="flex items-center gap-2">
+                                            <div class="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-600">
+                                                ${r.docentes.nome.charAt(0)}
+                                            </div>
+                                            <span>${r.docentes.nome}</span>
+                                        </div>
+                                    ` : '<span class="text-slate-300 italic">Não definido</span>'}
+                                </td>
                             </tr>
-                        `).join('')}
+                        `}).join('')}
                     </tbody>
                 </table>
-                <div class="flex justify-between items-center pt-4 border-t border-slate-200">
-                    <div class="text-[10px] text-slate-400">Competenz Tecnologia Educacional</div>
-                    <div class="text-[10px] text-slate-400">Gerado em ${new Date().toLocaleString('pt-BR')}</div>
+                <div class="flex justify-between items-center pt-6 border-t border-slate-200 mt-auto">
+                    <div class="text-[10px] text-slate-400 flex items-center gap-2">
+                        <i class="ph-fill ph-check-circle text-green-500"></i> Documento verificado digitalmente
+                    </div>
+                    <div class="text-right">
+                        <div class="text-[10px] font-bold text-slate-500 uppercase">Emissão</div>
+                        <div class="text-[10px] text-slate-400 font-mono">${new Date().toLocaleString('pt-BR')}</div>
+                    </div>
                 </div>
             `;
 

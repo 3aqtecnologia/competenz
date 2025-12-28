@@ -307,10 +307,12 @@ export const alocacaoAmbientes = {
         // Try to find teacher for this UC/Turma to persist in allocation (for reports)
         try {
             const { data: teacherAlloc } = await import('../services/supabase.js').then(m => m.supabase
-                .from('lotacao_docente')
+                .from('lotacoes_turma')
                 .select('docente_id')
                 .eq('turma_id', turmaId)
                 .eq('uc_id', ucId)
+                .not('docente_id', 'is', null)
+                .limit(1)
                 .single()
             );
             if (teacherAlloc) {

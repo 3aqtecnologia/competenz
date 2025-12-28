@@ -8,6 +8,16 @@
 
 ## 🆕 Histórico de Versões
 
+### v1.7 - Relatórios & Alocação Inteligente (Dez/2025)
+
+- **Relatórios Visuais de Ambientes**:
+  - Nova visualização em tela (modal dedicado) com layout refinado para impressão e leitura.
+  - Geração de PDF integrada ("Alocação de Ambientes") com Zebra Striping, Badges de Turno e Identidade Visual Profissional.
+  - Integração inteligente de dados: Recuperação automática de Docentes vinculados às Turmas/UCs, mesmo se não alocados diretamente ao ambiente.
+  - Exibição de foto dos docentes nos relatórios.
+- **Correções de Infraestrutura**:
+  - Ajuste nas referências de tabelas de alocação (`lotacoes_turma`) para garantir integridade referencial.
+
 ### v1.6 - Gestão de Turmas & Capacidade (Dez/2025)
 
 - **Capacidade de Turma**: Novo campo para definição do limite máximo de alunos por turma.

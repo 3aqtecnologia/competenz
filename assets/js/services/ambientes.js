@@ -249,9 +249,10 @@ export const ambientesService = {
         // Let's assume 'lotacao_docente' links (docente_id, turma_id, uc_id).
 
         const teachersRes = await supabase
-            .from('lotacao_docente')
+            .from('lotacoes_turma')
             .select('*, docentes(nome)')
-            .eq('turma_id', turmaId);
+            .eq('turma_id', turmaId)
+            .not('docente_id', 'is', null);
 
         return {
             ucs: ucs.map(item => {
@@ -303,9 +304,11 @@ export const ambientesService = {
                 id,
                 data_inicio,
                 data_fim,
+                turma_id,
+                uc_id,
                 ambientes!inner (nome, tipo),
                 cursos (nome),
-                docentes (nome),
+                docentes (nome, foto_url),
                 turmas (nome, turno)
             `)
             .gte('data_inicio', startDate)
