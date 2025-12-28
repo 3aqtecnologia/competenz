@@ -20,6 +20,9 @@ export const ambientes = {
                         <p class="text-slate-500">Gestão de Salas, Laboratórios e Oficinas</p>
                     </div>
                     <div class="flex gap-2">
+                        <button onclick="app.navigate('alocacaoAmbientes')" class="btn btn-white text-slate-600 border border-slate-200 hover:bg-slate-50">
+                            <i class="ph ph-calendar-plus"></i> Visão de Turmas
+                        </button>
                         <button onclick="app.ambientes.openReportModal()" class="btn btn-white text-slate-600 border border-slate-200 hover:bg-slate-50">
                             <i class="ph ph-printer"></i> Relatório
                         </button>

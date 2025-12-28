@@ -194,11 +194,100 @@ export const ambientesService = {
     async listBlockAllocations(ambienteId) {
         const { data, error } = await supabase
             .from('alocacoes_ambientes')
-            .select(`*, cursos(nome), docentes(nome)`)
+            .select(`
+                *, 
+                cursos(nome), 
+                docentes(nome), 
+                turmas(codigo_sge), 
+                unidades_curriculares(nome)
+            `)
             .eq('ambiente_id', ambienteId)
             .order('data_inicio', { ascending: false });
         if (error) throw error;
         return data;
+    },
+
+    // --- New Methods for Turma-Centric Allocation ---
+
+    async getTurmaPlanning(turmaId) {
+        // 1. Get Turma UCs (via Matrix)
+        // 2. Get existing allocations for this Turma
+        // 3. Get Teachers (via Lotacoes Docente) for this Turma
+
+        // Step 1: Turma -> Matrix -> MatrixUCs -> UCs
+        const turmaRes = await supabase
+            .from('turmas')
+            .select('matriz_id')
+            .eq('id', turmaId)
+            .single();
+
+        if (turmaRes.error) throw turmaRes.error;
+        const matrizId = turmaRes.data.matriz_id;
+
+        const ucsRes = await supabase
+            .from('matriz_ucs')
+            .select('*, unidades_curriculares(*)')
+            .eq('matriz_id', matrizId)
+            .order('periodo');
+
+        if (ucsRes.error) throw ucsRes.error;
+        const ucs = ucsRes.data;
+
+        // Step 2: Allocations
+        const allocRes = await supabase
+            .from('alocacoes_ambientes')
+            .select('*, ambientes(nome, tipo)')
+            .eq('turma_id', turmaId);
+
+        if (allocRes.error) throw allocRes.error;
+        const allocations = allocRes.data;
+
+        // Step 3: Teachers (Lotacao Docente) - Assuming we have a table for this
+        // Check schema confirms 'lotacoes_docente' or 'lotacao_docente'. 
+        // Based on previous checks, let's try 'lotacoes_docente' (likely singular/plural confusion in my head, checking query logs...)
+        // Query log showed 'lotacao_docente' AND 'lotacao_docentes'. I'll try 'lotacoes_docente' which implies relationship between turma/docente/uc (maybe?) or just 'lotacao_docente'.
+        // Let's assume 'lotacao_docente' links (docente_id, turma_id, uc_id).
+
+        const teachersRes = await supabase
+            .from('lotacao_docente')
+            .select('*, docentes(nome)')
+            .eq('turma_id', turmaId);
+
+        return {
+            ucs: ucs.map(item => {
+                const uc = item.unidades_curriculares;
+                const alloc = allocations.find(a => a.uc_id === uc.id);
+                // Try to find teacher for this specific UC
+                const teacherRel = teachersRes.data ? teachersRes.data.find(t => t.uc_id === uc.id) : null;
+
+                return {
+                    uc_id: uc.id,
+                    nome: uc.nome,
+                    carga_horaria: uc.carga_horaria,
+                    periodo_matriz: item.periodo, // 1º Semestre, etc.
+                    alocacao: alloc || null,
+                    docente: teacherRel ? teacherRel.docentes : null
+                };
+            })
+        };
+    },
+
+    // Quick method to get UCs for dropdown
+    async getTurmaUCsList(turmaId) {
+        const { data, error } = await supabase
+            .from('turmas')
+            .select(`
+                matrizes!inner (
+                    matriz_ucs!inner (
+                        unidades_curriculares!inner (id, nome)
+                    )
+                )
+            `)
+            .eq('id', turmaId)
+            .single();
+
+        if (error) return [];
+        return data.matrizes.matriz_ucs.map(i => i.unidades_curriculares);
     },
 
     async deleteBlockAllocation(id) {
