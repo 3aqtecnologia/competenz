@@ -1,5 +1,19 @@
 
 export const ui = {
+    showLoading(container) {
+        if (container) container.innerHTML = '<div class="flex justify-center items-center p-12"><div class="loading-spinner"></div></div>';
+    },
+
+    formatDate(date, format = 'DD/MM/YYYY') {
+        if (!date) return '';
+        return window.dayjs(date).tz('America/Fortaleza').format(format);
+    },
+
+    formatDateTime(date, format = 'DD/MM/YYYY HH:mm') {
+        if (!date) return '';
+        return window.dayjs(date).tz('America/Fortaleza').format(format);
+    },
+
     openModalWindow(title, innerHTML, className = '') {
         document.getElementById('modal-title').innerText = title;
         document.getElementById('modal-content').innerHTML = innerHTML;

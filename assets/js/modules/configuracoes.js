@@ -23,6 +23,20 @@ export const configuracoes = {
 
         const isAdmin = auth.isAdmin();
 
+        // Aplicar máscaras após renderização
+        setTimeout(() => {
+            if (configuracoes.currentTab === 'perfil' && window.IMask) {
+                document.querySelectorAll('input[type="tel"]').forEach(input => {
+                    IMask(input, {
+                        mask: [
+                            { mask: '(00) 0000-0000' },
+                            { mask: '(00) 00000-0000' }
+                        ]
+                    });
+                });
+            }
+        }, 100);
+
         return `
             <div class="animate-fade-in" style="padding-bottom: 80px;">
                 <!-- Page Header -->
@@ -84,9 +98,14 @@ export const configuracoes = {
             content.innerHTML = this.renderTabContent();
 
             // Re-bind events if necessary (e.g. masks)
-            if (window.imask) {
+            if (window.IMask) {
                 document.querySelectorAll('input[type="tel"]').forEach(input => {
-                    IMask(input, { mask: '(00) 00000-0000' });
+                    IMask(input, {
+                        mask: [
+                            { mask: '(00) 0000-0000' },
+                            { mask: '(00) 00000-0000' }
+                        ]
+                    });
                 });
             }
         }
@@ -158,11 +177,11 @@ export const configuracoes = {
                         Plataforma integrada de gestão acadêmica e pedagógica focada em resultados.
                     </p>
                     <div class="flex justify-center gap-4 text-sm text-gray-500">
-                        <a href="#" class="hover:text-purple-600 transition-colors">Termos de Uso</a>
+                        <a href="termos.html" target="_blank" class="hover:text-purple-600 transition-colors">Termos de Uso</a>
                         <span>•</span>
-                        <a href="#" class="hover:text-purple-600 transition-colors">Privacidade</a>
+                        <a href="termos.html#privacidade" target="_blank" class="hover:text-purple-600 transition-colors">Privacidade</a>
                         <span>•</span>
-                        <a href="#" class="hover:text-purple-600 transition-colors">Suporte</a>
+                        <a href="mailto:aalissonalmeidaq@gmail.com?subject=Suporte%20Competenz" class="hover:text-purple-600 transition-colors">Suporte</a>
                     </div>
                     <div class="mt-8 pt-6 border-t border-gray-100 text-xs text-gray-400 leading-relaxed">
                         <span class="font-bold text-gray-600 block">© 2026 Competenz</span>
@@ -257,6 +276,15 @@ export const configuracoes = {
                                         <div class="relative">
                                             <i class="ph ph-phone absolute left-3 top-3 text-gray-400"></i>
                                             <input name="telefone" type="tel" class="input-field pl-10" value="${user?.telefone || ''}" placeholder="(00) 00000-0000">
+                                        </div>
+                                        <div class="mt-2 flex items-center gap-2">
+                                            <label class="relative inline-flex items-center cursor-pointer">
+                                                <input type="checkbox" name="is_whatsapp" value="true" class="sr-only peer" ${user?.is_whatsapp ? 'checked' : ''}>
+                                                <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-500"></div>
+                                                <span class="ml-2 text-sm font-medium text-gray-600 flex items-center gap-1">
+                                                    <i class="ph-fill ph-whatsapp-logo text-green-500"></i> É WhatsApp?
+                                                </span>
+                                            </label>
                                         </div>
                                     </div>
                                 </div>
@@ -359,7 +387,8 @@ export const configuracoes = {
         try {
             const data = {
                 nome_completo: f.nome_completo.value,
-                telefone: f.telefone.value
+                telefone: f.telefone.value,
+                is_whatsapp: f.is_whatsapp.checked
             };
 
             const result = await auth.updateProfile(data);

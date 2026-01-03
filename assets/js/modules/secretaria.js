@@ -17,14 +17,76 @@ export const secretaria = {
         ]
     },
 
+    alunosData: [],
+    searchTerm: '',
+
     async init() {
-        // Here we would fetch real data
         console.log('Secretaria module initialized');
-        this.render();
+        await this.loadAlunos();
+    },
+
+    async loadAlunos() {
+        try {
+            const contentParams = `
+                id, nome, matricula_sge, status, foto_url,
+                empresas (nome),
+                matriculas (
+                    status,
+                    turmas (nome)
+                )
+            `;
+
+            const { data, error } = await supabase
+                .from('alunos')
+                .select(contentParams)
+                .order('nome');
+
+            if (error) throw error;
+
+            this.alunosData = data.map(a => {
+                // Find active matricula or first one
+                const matriculaAtiva = a.matriculas?.find(m => m.status === 'Ativa') || a.matriculas?.[0];
+                const cursoNome = matriculaAtiva?.turmas?.nome || 'Não Enturmado';
+
+                return {
+                    id: a.id,
+                    nome: a.nome,
+                    matricula: a.matricula_sge || 'S/ Matrícula',
+                    status: a.status || 'Ativo',
+                    curso: cursoNome,
+                    empresa: a.empresas?.nome || null,
+                    avatar: a.foto_url
+                };
+            });
+
+            this.render();
+        } catch (error) {
+            console.error('Erro ao buscar alunos:', error);
+            ui.toast('Erro ao carregar alunos.', 'error');
+            this.alunosData = this.mocks.alunos; // Fallback
+            this.render();
+        }
+    },
+
+    handleSearch(e) {
+        this.searchTerm = e.target.value.toLowerCase();
+        // Re-render filtrado
+        document.getElementById('alunos-list-container').innerHTML = this.renderTokenList();
+    },
+
+    getFilteredAlunos() {
+        if (!this.alunosData) return [];
+        if (!this.searchTerm) return this.alunosData;
+        return this.alunosData.filter(a =>
+            (a.nome && a.nome.toLowerCase().includes(this.searchTerm)) ||
+            (a.matricula && a.matricula.toLowerCase().includes(this.searchTerm))
+        );
     },
 
     render() {
-        return `
+        // Main Render (Wrapper)
+        if (!document.getElementById('secretaria-content')) {
+            return `
             <div class="animate-fade-in space-y-6">
                 <!-- Header -->
                 <div class="page-header">
@@ -59,7 +121,12 @@ export const secretaria = {
                     ${this.renderCurrentTab()}
                 </div>
             </div>
-        `;
+            `;
+        } else {
+            // Update only content if wrapper exists
+            document.getElementById('secretaria-content').innerHTML = this.renderCurrentTab();
+            return ''; // Caller handles logic
+        }
     },
 
     renderTabButton(id, label, icon) {
@@ -75,8 +142,7 @@ export const secretaria = {
 
     setTab(tab) {
         this.currentTab = tab;
-        // Manual DOM update because this is an internal nav
-        document.getElementById('content-area').innerHTML = this.render();
+        this.render();
     },
 
     renderCurrentTab() {
@@ -89,8 +155,6 @@ export const secretaria = {
         }
     },
 
-    // --- VIEW RETURNERS ---
-
     renderAlunosView() {
         return `
             <div class="animate-fade-in">
@@ -98,7 +162,14 @@ export const secretaria = {
                 <div class="card" style="padding: 1rem; margin-bottom: 1.5rem; display: flex; gap: 1rem; align-items: center;">
                     <div style="flex: 1; position: relative;">
                         <i class="ph ph-magnifying-glass" style="position: absolute; left: 1rem; top: 1rem; color: #94a3b8;"></i>
-                        <input type="text" placeholder="Buscar por aluno, matrícula ou CPF..." class="input-field" style="padding-left: 2.5rem;">
+                        <input type="text" 
+                            placeholder="Buscar por aluno, matrícula ou CPF..." 
+                            class="input-field" 
+                            style="padding-left: 2.5rem;"
+                            oninput="app.secretaria.handleSearch(event)"
+                            value="${this.searchTerm}"
+                            autofocus
+                        >
                     </div>
                     <div style="width: 200px;">
                         <select class="input-field">
@@ -110,46 +181,61 @@ export const secretaria = {
                 </div>
 
                 <!-- List (Token Layout) -->
-                <div class="token-list">
-                    ${this.mocks.alunos.map(aluno => `
-                        <div class="token-item group cursor-pointer hover:border-indigo-200 transition-colors">
-                            <div class="token-icon ${this.getAvatarColor(aluno.nome)}">
-                                ${aluno.avatar
-                ? `<img src="${aluno.avatar}" class="w-full h-full rounded-xl object-cover">`
-                : `<span class="font-bold text-lg">${this.getInitials(aluno.nome)}</span>`}
-                            </div>
-                            
-                            <div class="token-info">
-                                <div class="token-name">${aluno.nome}</div>
-                                <div class="token-meta">
-                                    <span class="font-mono bg-slate-100 px-1 rounded text-slate-600 mr-2">${aluno.matricula}</span>
-                                    ${aluno.curso}
-                                </div>
-                                ${aluno.empresa ? `
-                                    <div class="token-meta text-indigo-600 mt-1">
-                                        <i class="ph-fill ph-briefcase"></i> ${aluno.empresa}
-                                    </div>
-                                ` : ''}
-                            </div>
-
-                            <div class="flex items-center gap-4">
-                                <span class="badge ${this.getStatusBadge(aluno.status)}">${aluno.status}</span>
-                                
-                                <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button class="p-2 hover:bg-slate-100 rounded-lg text-slate-500 hover:text-indigo-600 transition-colors" title="Editar">
-                                        <i class="ph-bold ph-pencil-simple"></i>
-                                    </button>
-                                    <button class="p-2 hover:bg-slate-100 rounded-lg text-slate-500 hover:text-indigo-600 transition-colors" title="Histórico">
-                                        <i class="ph-bold ph-file-text"></i>
-                                    </button>
-                                </div>
-                                <i class="ph ph-caret-right text-gray-300 group-hover:text-indigo-400"></i>
-                            </div>
-                        </div>
-                    `).join('')}
+                <div id="alunos-list-container" class="token-list">
+                    ${this.renderTokenList()}
                 </div>
             </div>
         `;
+    },
+
+    renderTokenList() {
+        const alunos = this.getFilteredAlunos();
+
+        if (alunos.length === 0) {
+            return `
+                <div class="text-center py-12 text-slate-400">
+                    <i class="ph-duotone ph-user-minus text-4xl mb-2"></i>
+                    <p>Nenhum aluno encontrado.</p>
+                </div>
+            `;
+        }
+
+        return alunos.map(aluno => `
+            <div class="token-item group cursor-pointer hover:border-indigo-200 transition-colors">
+                <div class="token-icon ${this.getAvatarColor(aluno.nome)}">
+                    ${aluno.avatar
+                ? `<img src="${aluno.avatar}" class="w-full h-full rounded-xl object-cover">`
+                : `<span class="font-bold text-lg">${this.getInitials(aluno.nome)}</span>`}
+                </div>
+                
+                <div class="token-info">
+                    <div class="token-name">${aluno.nome}</div>
+                    <div class="token-meta">
+                        <span class="font-mono bg-slate-100 px-1 rounded text-slate-600 mr-2">${aluno.matricula}</span>
+                        ${aluno.curso}
+                    </div>
+                    ${aluno.empresa ? `
+                        <div class="token-meta text-indigo-600 mt-1">
+                            <i class="ph-fill ph-briefcase"></i> ${aluno.empresa}
+                        </div>
+                    ` : ''}
+                </div>
+
+                <div class="flex items-center gap-4">
+                    <span class="badge ${this.getStatusBadge(aluno.status)}">${aluno.status}</span>
+                    
+                    <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button class="p-2 hover:bg-slate-100 rounded-lg text-slate-500 hover:text-indigo-600 transition-colors" title="Editar">
+                            <i class="ph-bold ph-pencil-simple"></i>
+                        </button>
+                        <button class="p-2 hover:bg-slate-100 rounded-lg text-slate-500 hover:text-indigo-600 transition-colors" title="Histórico">
+                            <i class="ph-bold ph-file-text"></i>
+                        </button>
+                    </div>
+                    <i class="ph ph-caret-right text-gray-300 group-hover:text-indigo-400"></i>
+                </div>
+            </div>
+        `).join('');
     },
 
     renderMatriculasView() {

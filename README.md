@@ -8,6 +8,20 @@
 
 ## 🆕 Histórico de Versões
 
+### v2.2 - Auditoria, Perfil & Localização (Jan/2026)
+
+- **🔒 Auditoria e Segurança**:
+  - **Logs de Acesso Detalhados**: Registro automático de Login/Logout com captura de IP e User Agent.
+  - **Identificação Real**: Logs agora armazenam o nome do usuário para auditoria facilitada.
+  - **Termos e Privacidade**: Seção dedicada a Cookies e Armazenamento Local nos Termos de Uso.
+- **👤 Meu Perfil Aprimorado**:
+  - **Gestão de Dados**: Atualização de telefone com máscara dinâmica (Fixo/Celular) e toggle "É WhatsApp".
+  - **Avatar**: Upload e visualização de foto de perfil.
+  - **Alteração de Senha**: Fluxo seguro com logout automático.
+- **🌍 Localização e Timezone**:
+  - **Fuso Horário Fixo**: Todo o sistema agora opera explicitamente em `America/Fortaleza`, garantindo consistência em datas e horários independente da máquina do usuário.
+  - **Dashboard Personalizado**: Saudação ("Bom dia", etc.) baseada na hora local da instituição e exibição do nome real do usuário.
+
 ### v2.1 - Secretaria, Pedagógico & Gestão (Jan/2026)
 
 - **🏛️ Módulo Secretaria (Novo)**:

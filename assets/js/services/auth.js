@@ -51,6 +51,9 @@ class AuthService {
                 .update({ ultimo_acesso: new Date().toISOString() })
                 .eq('email', email);
 
+            // Log de Acesso (Login)
+            await this._logAccess('LOGIN');
+
             return { success: true, user: this.currentUser };
         } catch (error) {
             console.error('Erro no login:', error);
@@ -179,6 +182,9 @@ class AuthService {
      */
     async logout() {
         try {
+            if (this.currentUser) {
+                await this._logAccess('LOGOUT');
+            }
             await supabase.auth.signOut();
             this.currentUser = null;
             this.currentProfile = null;
@@ -335,6 +341,37 @@ class AuthService {
      */
     isAdmin() {
         return this.currentProfile?.nome === 'Administrador';
+    }
+    /**
+     * Helper interno para registrar logs de acesso (Login/Logout)
+     */
+    async _logAccess(action) {
+        try {
+            let ip = 'Unknown';
+            // Tentar obter IP com timeout curto
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 1500); // 1.5s timeout
+                const response = await fetch('https://api.ipify.org?format=json', { signal: controller.signal });
+                clearTimeout(timeoutId);
+                if (response.ok) {
+                    const json = await response.json();
+                    ip = json.ip;
+                }
+            } catch (err) {
+                // Silencioso em caso de falha de rede/timeout
+            }
+
+            await supabase.from('logs_acesso').insert({
+                usuario_id: this.currentUser.id,
+                nome_usuario: this.currentUser.nome_completo,
+                acao: action,
+                ip_address: ip,
+                user_agent: navigator.userAgent
+            });
+        } catch (e) {
+            console.error(`Erro ao registrar log (${action}):`, e);
+        }
     }
 }
 

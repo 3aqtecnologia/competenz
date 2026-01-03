@@ -2,15 +2,16 @@
 // modules/dashboard.js
 // Modern Dashboard using the new Design System
 import { auth } from '../services/auth.js';
+import { ui } from '../utils/ui.js';
 
 export function renderDashboard(state) {
-    const hour = new Date().getHours();
+    const hour = window.dayjs().tz('America/Fortaleza').hour();
     const saudacao = hour < 12 ? 'Bom dia' : (hour < 18 ? 'Boa tarde' : 'Boa noite');
 
     // Auth Context
     const profileName = auth.currentProfile?.nome || 'Usuário';
     const userName = auth.currentUser?.nome?.split(' ')[0] || '';
-    const displayName = profileName; // Use Profile Name as the main role indicator
+    const displayName = auth.currentUser?.nome_completo || profileName; // Use Real Name
 
     // Data Safety
     const teachers = state.teachers || [];
@@ -222,7 +223,7 @@ export function renderDashboard(state) {
                     </h1>
                     <p class="text-slate-500 mt-1 flex items-center gap-2 text-sm font-medium">
                         <i class="ph ph-calendar-blank"></i>
-                        ${window.dayjs().format('dddd, D [de] MMMM [de] YYYY')}
+                        ${ui.formatDate(new Date(), 'dddd, D [de] MMMM [de] YYYY')}
                     </p>
                 </div>
                 <div class="flex gap-3">
@@ -243,15 +244,15 @@ export function renderDashboard(state) {
 
             <!-- Content Split Grid -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                
+
                 <!-- Main Activity (Left - 2cols) -->
-                <div class="lg:col-span-2 space-y-6"> 
+                <div class="lg:col-span-2 space-y-6">
                     <div class="flex justify-between items-center mb-1">
                         <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
                             <i class="ph-duotone ph-clock text-indigo-500"></i> ${mainActivityTitle}
                         </h3>
                     </div>
-                    
+
                     <div class="card overflow-hidden bg-white shadow-card rounded-2xl border-0 ring-1 ring-slate-100">
                         ${classes.slice(0, 5).map(t => `
                             <div class="p-4 border-b border-gray-50 flex items-center gap-4 cursor-pointer hover:bg-slate-50 transition-colors group" 
@@ -270,7 +271,7 @@ export function renderDashboard(state) {
                                 <i class="ph-bold ph-caret-right text-slate-300 group-hover:text-indigo-400 transition-colors"></i>
                             </div>
                         `).join('') || '<div class="p-12 text-center text-slate-400">Nenhuma atividade recente encontrada.</div>'}
-                        
+
                         <div class="p-3 bg-slate-50 text-center border-t border-gray-50">
                             <button onclick="app.planejamento.currentTab = 'turmas'; app.navigate('planejamento')" class="text-xs font-bold text-indigo-600 uppercase tracking-wide hover:underline py-1">
                                 Ver todas as turmas
@@ -282,7 +283,7 @@ export function renderDashboard(state) {
                 <!-- Quick Actions (Right - 1col) -->
                 <div class="space-y-6">
                     <h3 class="text-lg font-bold text-slate-900">Acesso Rápido</h3>
-                    
+
                     <div class="flex flex-col gap-4">
                         ${quickActions}
                         ${tipsContent}
