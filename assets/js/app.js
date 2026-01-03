@@ -12,6 +12,8 @@ import { ambientes } from './modules/ambientes.js?v=3';
 import { alocacaoAmbientes } from './modules/alocacaoAmbientes.js';
 import { usuarios } from './modules/usuarios.js';
 import { configuracoes } from './modules/configuracoes.js';
+import { secretaria } from './modules/secretaria.js';
+import { pedagogico } from './modules/pedagogico.js';
 import { ui } from './utils/ui.js';
 
 class App {
@@ -43,6 +45,8 @@ class App {
         this.alocacaoAmbientes = alocacaoAmbientes;
         this.usuarios = usuarios;
         this.configuracoes = configuracoes;
+        this.secretaria = secretaria;
+        this.pedagogico = pedagogico;
         this.dashboard = { render: renderDashboard }; // Adapter
 
         // Expose UI helper globally for HTML onclick events
@@ -248,12 +252,10 @@ class App {
                     html = planejamento.render(this.state);
                     break;
                 case 'secretaria':
-                    html = '<div class="card p-10 text-center text-gray-400">Módulo Secretaria em breve...</div>';
-                    // html = secretaria.render(this.state);
+                    html = secretaria.render(this.state);
                     break;
                 case 'pedagogico':
-                    html = '<div class="card p-10 text-center text-gray-400">Módulo Pedagógico em breve...</div>';
-                    // html = pedagogico.render(this.state);
+                    html = pedagogico.render(this.state);
                     break;
                 case 'alocacaoAmbientes':
                     html = alocacaoAmbientes.render(this.state);

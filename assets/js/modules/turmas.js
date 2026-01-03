@@ -7,7 +7,9 @@ export const turmas = {
                 .from('turmas')
                 .select(`
                     *,
-                    matrizes (codigo, carga_horaria_total)
+                    matrizes (codigo, carga_horaria_total),
+                    coordenador:coordenador_id (nome_completo),
+                    analista:analista_id (nome_completo)
                 `)
                 .order('created_at', { ascending: false });
 

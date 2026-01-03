@@ -4,44 +4,51 @@
 /* More Modern Headings */
 
 :root {
-    /* Brand Colors */
-    --primary: #0F172A;
-    /* Deepest Navy */
-    --primary-light: #1E293B;
+    /* Brand Colors (Style Guide Match) */
+    --primary: #1a1a2e;
+    /* Dark Navy */
+    --primary-light: #2a2a40;
 
-    --accent: #D9F99D;
-    /* Lime Pastel */
-    --accent-glow: rgba(196, 255, 13, 0.4);
-    --accent-text: #365314;
+    --accent: #b3ff50;
+    /* Lime Green */
+    --accent-glow: rgba(179, 255, 80, 0.4);
+    --accent-text: #1a1a2e;
+    /* Navy Text on Lime */
+
+    /* Additional Palette */
+    --purple: #8e44ad;
+    --blue: #3498db;
+    --mint: #2ecc71;
+    --dark-gray: #333333;
 
     /* Semantic Colors */
-    --success: #10B981;
+    --success: #2ecc71;
     --success-bg: #ECFDF5;
     --success-text: #064E3B;
 
-    --warning: #F59E0B;
+    --warning: #f1c40f;
     --warning-bg: #FFFBEB;
     --warning-text: #78350F;
 
-    --danger: #EF4444;
+    --danger: #e74c3c;
     --danger-bg: #FEF2F2;
     --danger-text: #7F1D1D;
 
-    --info: #3B82F6;
+    --info: #3498db;
     --info-bg: #EFF6FF;
     --info-text: #1E3A8A;
 
     /* Neutral / Surfaces */
-    --bg-body: #020617;
-    /* Almost Black */
+    --bg-body: #1a1a2e;
+    /* Dark Navy */
     --bg-panel: #F8FAFC;
-    /* Crisp White/Gray */
     --bg-card: #FFFFFF;
 
     --border: #E2E8F0;
     --border-hover: #CBD5E1;
 
-    --text-primary: #0F172A;
+    --text-primary: #1a1a2e;
+    /* Navy for primary text */
     --text-secondary: #64748B;
     --text-tertiary: #94A3B8;
 
@@ -100,7 +107,7 @@ body {
     display: flex;
     width: 100%;
     height: 100%;
-    background: radial-gradient(circle at top left, #1e293b 0%, #020617 50%);
+    background: var(--bg-body);
 }
 
 /* Sidebar */
@@ -205,10 +212,10 @@ body {
 }
 
 .nav-item.active {
-    background: linear-gradient(135deg, var(--accent) 0%, #bef264 100%);
-    color: #0f172a;
-    font-weight: 600;
-    box-shadow: 0 0 20px var(--accent-glow);
+    background: var(--accent);
+    color: var(--text-primary);
+    font-weight: 700;
+    box-shadow: 0 4px 12px rgba(179, 255, 80, 0.2);
     border: none;
 }
 
@@ -412,10 +419,12 @@ body {
 
 .input-field {
     width: 100%;
-    padding: 0.875rem 1rem;
-    border-radius: var(--radius-sm);
+    padding: 0.875rem 1.25rem;
+    border-radius: 99px;
+    /* Pill shape standard for inputs in new style */
     border: 1px solid var(--border);
-    background: #fff;
+    background: #F8FAFC;
+    /* Light gray background */
     font-family: inherit;
     font-size: 0.95rem;
     transition: all 0.2s;
@@ -424,7 +433,45 @@ body {
 
 .input-field:focus {
     border-color: var(--primary);
-    box-shadow: 0 0 0 4px rgba(15, 23, 42, 0.05);
+    background: #fff;
+    box-shadow: 0 0 0 4px rgba(26, 26, 46, 0.05);
+    /* Navy glow */
+}
+
+/* Toggle Switch (Menu Style) */
+.toggle-switch {
+    appearance: none;
+    width: 3rem;
+    height: 1.75rem;
+    background: #e2e8f0;
+    border-radius: 99px;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.toggle-switch::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 1.5rem;
+    height: 1.5rem;
+    background: #fff;
+    border-radius: 50%;
+    transition: all 0.3s;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.toggle-switch:checked {
+    background: var(--accent);
+    /* Lime Green */
+}
+
+.toggle-switch:checked::after {
+    transform: translateX(1.25rem);
+    background: var(--text-primary);
+    /* Navy Dot */
 }
 
 select.input-field {
@@ -439,7 +486,10 @@ select.input-field {
     background: #fff;
     padding: 6px;
     border-radius: 99px;
-    width: fit-content;
+    width: 100%;
+    /* Changed from fit-content */
+    overflow-x: auto;
+    /* Allow scroll on small screens */
     border: 1px solid var(--border);
     box-shadow: var(--shadow-sm);
 }

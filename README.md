@@ -8,6 +8,27 @@
 
 ## 🆕 Histórico de Versões
 
+### v2.1 - Secretaria, Pedagógico & Gestão (Jan/2026)
+
+- **🏛️ Módulo Secretaria (Novo)**:
+  - Gestão completa de pré-matrículas e alunos.
+  - UI refinada com listagens em cartões (Token List) e filtros rápidos.
+  - Controle de documentos pendentes e status de enturmação.
+- **🎓 Módulo Pedagógico (Novo)**:
+  - Interface dedicada para docentes registrarem Diários de Classe e Frequência.
+  - Gestão de Avaliações e Notas por turma e aluno.
+  - Dashboards de desempenho e painéis de indicadores acadêmicos.
+- **👥 Gestão de Responsáveis**:
+  - **Vínculo Oficial**: Agora é possível definir oficialmente um **Coordenador Pedagógico** e um **Analista de Educação** para cada turma.
+  - **Identificação Visual**: Ícones e nomes dos responsáveis exibidos diretamente nos cards de listagem de turmas.
+- **🤖 Automação de Cronogramas**:
+  - **Recálculo Inteligente**: Ao alterar regras de frequência (dias letivos, carga horária, início), o sistema regera todas as datas de aula automaticamente.
+  - **Previsão Automática**: A "Data de Término Prevista" é calculada em tempo real, garantindo coerência entre o plano de aula e o calendário.
+  - **UI Aprimorada**: Formulário de regras de frequência com design visual moderno e seleção intuitiva de dias da semana.
+- **✨ UI Refinada**:
+  - **Tabs Expansivas**: Menus de navegação interna agora ocupam 100% da largura disponível.
+  - **Cards de Ação**: Botões e indicadores visuais mais claros em toda a aplicação.
+
 ### v2.0 - UI Premium & Dashboard Inteligente (Jan/2026)
 
 - **✨ UI/UX Premium Refinado**:
@@ -137,21 +158,22 @@ O coração da estrutura educacional. Permite a definição flexível e reaprove
 - **Turmas**: Gestão de turmas e cronogramas.
 - **Ambientes**: Gestão física de salas e laboratórios com controle visual de alocações e relatórios.
 
-### 2. 📝 Secretaria (Em Breve)
+### 2. 📝 Secretaria
 
-Gestão do ciclo de vida do aluno.
+Gestão completa do ciclo de vida do aluno.
 
-- **Matrículas**: Processo de ingresso e enturmação.
-- **Turmas**: Organização logística de alunos e horários.
-- **Documentação**: Emissão de históricos e declarações.
+- **Alunos e Matrículas**: Cadastro centralizado e gestão de enturmação.
+- **Documentação Digital**: Controle de pendências e upload de arquivos.
+- **Empresas**: Gestão de parceiros e relatórios de frequência.
 
-### 3. 🎓 Pedagógico (Futuro)
+### 3. 🎓 Pedagógico
 
-Acompanhamento do processo de ensino-aprendizagem.
+Gestão acadêmica focada no docente.
 
-- **Diário de Classe**: Registro de frequência e conteúdo.
-- **Notas e Avaliações**: Sistema avaliativo parametrizável.
-- **Planos de Ensino**: Planejamento aula a aula.
+- **Diário de Classe Digital**: Registro ágil de aulas e chamadas.
+- **Avaliações e Notas**: Definição de critérios e lançamento de conceitos.
+- **Frequência**: Controle automatizado de presença com relatórios.
+- **Desempenho**: Dashboards de acompanhamento por turma e aluno.
 
 ### 4. 📊 Dashboard Gerencial
 

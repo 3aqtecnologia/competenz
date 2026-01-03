@@ -163,6 +163,10 @@ export const turmasView = {
                             <span>•</span>
                             <span>${t.turno || 'Turno n/i'}</span>
                         </div>
+                        <div class="text-[11px] text-slate-400 mt-2 flex gap-2 items-center">
+                             ${t.coordenador ? `<span class="flex items-center gap-1.5 bg-slate-50 px-2 py-0.5 rounded border border-slate-100" title="Coord. Pedagógico: ${t.coordenador.nome_completo}"><i class="ph-fill ph-crown text-indigo-400"></i> ${t.coordenador.nome_completo.split(' ')[0]}</span>` : ''}
+                             ${t.analista ? `<span class="flex items-center gap-1.5 bg-slate-50 px-2 py-0.5 rounded border border-slate-100" title="Analista Educação: ${t.analista.nome_completo}"><i class="ph-fill ph-student text-emerald-400"></i> ${t.analista.nome_completo.split(' ')[0]}</span>` : ''}
+                        </div>
                     </div>
                 </div>
                 <div class="flex items-center gap-4">
@@ -236,6 +240,17 @@ export const turmasView = {
         }
         this.cachedCourses = courses;
 
+        // Fetch Users for Coordinator/Analyst selection
+        let users = [];
+        try {
+            const { data } = await supabase.from('usuarios').select('id, nome_completo');
+            users = data || [];
+            // Sort alphabetically
+            users.sort((a, b) => a.nome_completo.localeCompare(b.nome_completo));
+        } catch (e) {
+            console.error('Error fetching users:', e);
+        }
+
         ui.openModalWindow(id ? 'Editar Turma' : 'Nova Turma', `
             <form id="form-turma" onsubmit="app.turmasView.save(event, '${id || ''}')" class="flex flex-col h-full">
                 
@@ -301,37 +316,72 @@ export const turmasView = {
                                     </select>
                                 </div>
                             </div>
+                            
+                            <h4 class="text-sm font-bold text-slate-700 mb-4 mt-6 border-b pb-2">Responsáveis</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                 <div class="input-group">
+                                    <label class="input-label">Coord. Pedagógico</label>
+                                    <select name="coordenador_id" class="input-field">
+                                        <option value="">Selecione...</option>
+                                        ${users.map(u => `<option value="${u.id}" ${t.coordenador_id === u.id ? 'selected' : ''}>${u.nome_completo}</option>`).join('')}
+                                    </select>
+                                </div>
+                                <div class="input-group">
+                                    <label class="input-label">Analista de Educação</label>
+                                    <select name="analista_id" class="input-field">
+                                        <option value="">Selecione...</option>
+                                        ${users.map(u => `<option value="${u.id}" ${t.analista_id === u.id ? 'selected' : ''}>${u.nome_completo}</option>`).join('')}
+                                    </select>
+                                </div>
+                            </div>
+                            </div>
                         </div>
 
-                        <div class="card bg-white p-6">
-                            <h4 class="text-sm font-bold text-slate-700 mb-4 border-b pb-2">Regras de Cronograma</h4>
-                            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                                <div class="input-group">
-                                    <label class="input-label">Data de Início</label>
-                                    <input type="date" name="data_inicio" value="${t.data_inicio || ''}" class="input-field" required>
+                        <div class="card bg-slate-50 border border-slate-200 p-5 shadow-none mt-6">
+                            <div class="flex items-center gap-3 mb-5 border-b border-slate-200 pb-3">
+                                <div class="p-1.5 bg-white border border-slate-200 text-indigo-600 rounded-lg shadow-sm">
+                                    <i class="ph-bold ph-calendar-check text-lg"></i>
                                 </div>
-                                <div class="input-group">
-                                    <label class="input-label">Data de Término (Limite)</label>
-                                    <input type="date" name="data_fim_previsto" value="${t.data_fim_previsto || ''}" class="input-field">
+                                <div>
+                                    <h4 class="text-sm font-bold text-slate-800">Regras de Frequência</h4>
+                                    <p class="text-[10px] text-slate-500">Defina os dias e horários para gerar o cronograma automático.</p>
                                 </div>
-                                <div class="input-group">
-                                    <label class="input-label">Horas/Dia</label>
-                                    <input type="number" name="horas_diarias" value="${t.horas_diarias || 4}" class="input-field" min="1" max="10" onchange="app.turmasView.generateSchedule()">
+                            </div>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
+                                <div class="input-group mb-0">
+                                    <label class="input-label text-slate-500">Início das Aulas</label>
+                                    <input type="date" name="data_inicio" value="${t.data_inicio || ''}" class="input-field bg-white shadow-sm" required onchange="app.turmasView.generateSchedule()">
                                 </div>
-                                <div class="input-group">
-                                    <label class="input-label">Dias de Aula</label>
-                                    <div class="flex gap-1 flex-wrap mt-2">
-                                        ${[1, 2, 3, 4, 5, 6].map(d => {
-            const names = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab'];
+                                 <div class="input-group mb-0">
+                                    <label class="input-label text-slate-500">Carga Horária / Dia</label>
+                                     <div class="relative">
+                                        <input type="number" name="horas_diarias" value="${t.horas_diarias || 4}" class="input-field bg-white shadow-sm pl-4 pr-10" min="1" max="10" onchange="app.turmasView.generateSchedule()">
+                                        <span class="absolute right-4 top-2.5 text-xs font-bold text-slate-400">Horas</span>
+                                     </div>
+                                </div>
+                                <div class="input-group mb-0">
+                                    <label class="input-label text-slate-500">Previsão de Término</label>
+                                    <input type="date" name="data_fim_previsto" value="${t.data_fim_previsto || ''}" class="input-field bg-white shadow-sm">
+                                </div>
+                            </div>
+
+                            <div class="input-group mb-0">
+                                <label class="input-label text-slate-500 mb-3 block">Dias Letivos na Semana</label>
+                                <div class="flex flex-wrap gap-2">
+                                    ${[1, 2, 3, 4, 5, 6].map(d => {
+            const shortNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab'];
             const isChecked = t.dias_aula?.includes(d) || (!t.dias_aula && d <= 5);
             return `
-                                                <label class="checkbox-tag text-xs px-2 py-1">
-                                                    <input type="checkbox" name="dias_aula" value="${d}" ${isChecked ? 'checked' : ''} onchange="app.turmasView.generateSchedule()">
-                                                    ${names[d]}
-                                                </label>
-                                            `;
+                                            <label class="cursor-pointer relative group">
+                                                <input type="checkbox" name="dias_aula" value="${d}" ${isChecked ? 'checked' : ''} onchange="app.turmasView.generateSchedule()" class="peer sr-only">
+                                                <div class="px-4 py-2 rounded-lg border border-slate-200 bg-white text-slate-500 text-xs font-bold uppercase transition-all peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:border-indigo-600 peer-checked:shadow-md hover:border-indigo-300 shadow-sm flex items-center gap-2">
+                                                    <i class="ph-bold ${isChecked ? 'ph-check-circle' : 'ph-circle'} text-[10px] opacity-50 peer-checked:opacity-100"></i>
+                                                    ${shortNames[d]}
+                                                </div>
+                                            </label>
+                                        `;
         }).join('')}
-                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -733,14 +783,13 @@ export const turmasView = {
         // Update UI
         this.renderScheduleTable(newSchedule, this.currentMatrizUCs);
 
-        // Update Previsão Término Input ONLY if empty (don't overwrite manual setting)
+        // Update Previsão Término Input (Auto-fill)
         if (newSchedule.length > 0) {
             const lastDate = newSchedule[newSchedule.length - 1].data_fim;
             const endInput = document.querySelector('input[name="data_fim_previsto"]');
-            if (endInput && !endInput.value) {
+            if (endInput) {
                 endInput.value = lastDate;
-            } else if (endInput && endInput.value && lastDate > endInput.value) {
-                ui.toast('Atenção: A data calculada excede o limite informado.', 'warning');
+                ui.toast('Previsão de término atualizada.', 'info');
             }
         }
 
@@ -786,7 +835,9 @@ export const turmasView = {
             data_fim_previsto: finalDataFim, // Set the final end date
             horas_diarias: formData.get('horas_diarias'),
             status: formData.get('status'),
-            dias_aula: JSON.stringify(diasAula)
+            dias_aula: JSON.stringify(diasAula),
+            coordenador_id: formData.get('coordenador_id') || null,
+            analista_id: formData.get('analista_id') || null
         };
 
         try {

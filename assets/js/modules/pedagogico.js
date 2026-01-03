@@ -3,257 +3,286 @@ import { supabase } from '../services/supabase.js';
 import { ui } from '../utils/ui.js';
 
 export const pedagogico = {
-    // State local para edição
-    tempTags: {
-        tecnicas: [],
-        sociais: [],
-        socioemocionais: [],
-        conhecimentos: []
+    currentTab: 'diarios', // diarios, frequencia, avaliacoes, desempenho
+
+    // Mock Data for UI Prototyping
+    mocks: {
+        turmas: [
+            { id: 1, nome: "Técnico em Desenv. Sistemas - Módulo 1", uc: "Lógica de Programação", turno: "Vespertino", alunos: 32, aulas_dadas: 14 },
+            { id: 2, nome: "Aprendizagem Ind. Mecânica - Turma B", uc: "Leitura e Interpretação de Desenho", turno: "Matutino", alunos: 28, aulas_dadas: 8 },
+        ],
+        aulas: [
+            { id: 1, data: "02/01/2026", conteudo: "Introdução a Algoritmos e Variáveis", status: "Registrada" },
+            { id: 2, data: "03/01/2026", conteudo: "Estruturas Condicionais (If/Else)", status: "Pendente" }
+        ]
     },
 
-    async render(state) {
-        // Fetch Catalog UCs
-        const { data: ucs, error } = await supabase
-            .from('catalogo_ucs')
-            .select('*')
-            .order('nome', { ascending: true });
-
-        if (error) {
-            console.error(error);
-            return `<div class="p-8 text-center text-red-500">Erro ao carregar catálogo: ${error.message}</div>`;
-        }
-
-        const areas = [...new Set(ucs.map(u => u.area_tecnologica).filter(Boolean))];
-
+    render(state) {
         return `
-            <div class="max-w-7xl mx-auto space-y-6 pb-10">
-                <header class="flex justify-between items-end">
-                    <div>
-                        <h2 class="text-3xl font-bold text-gray-800">Pedagógico</h2>
-                        <p class="text-gray-500 mt-1">Banco de Unidades Curriculares e Desenho Curricular</p>
-                    </div>
-                    <button onclick="app.pedagogico.openModalUC()" class="btn-primary flex items-center gap-2 shadow-lg shadow-purple-500/20">
-                        <i class="ph ph-plus-circle text-lg"></i> Nova UC Padrão
-                    </button>
-                </header>
-
-                <!-- Stats / Filters -->
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div class="glass-panel p-4 flex items-center gap-4 bg-white">
-                        <div class="w-12 h-12 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center text-xl"><i class="ph ph-books"></i></div>
+            <div class="animate-fade-in space-y-6">
+                <!-- Header -->
+                <div class="page-header">
+                    <div class="flex-between">
                         <div>
-                            <p class="text-2xl font-bold text-gray-800">${ucs.length}</p>
-                            <p class="text-xs text-gray-500 font-medium uppercase tracking-wide">UCs Cadastradas</p>
+                            <h2 class="page-title">Gestão Pedagógica</h2>
+                            <p class="page-subtitle">Diários de classe, frequência, avaliações e desempenho escolar</p>
+                        </div>
+                        <div class="flex gap-3">
+                             <button class="btn btn-secondary" onclick="app.pedagogico.openRelatorios()">
+                                <i class="ph-bold ph-chart-line-up"></i>
+                                <span class="hidden md:inline">Indicadores</span>
+                            </button>
+                            <button class="btn btn-primary" onclick="app.pedagogico.openNovoDiario()">
+                                <i class="ph-bold ph-book-open-text"></i>
+                                <span>Registrar Aula</span>
+                            </button>
                         </div>
                     </div>
                 </div>
 
-                <!-- Catalog Grid -->
+                <!-- Tabs -->
+                <div class="tab-pills" style="margin-bottom: 2rem;">
+                    ${this.renderTabButton('diarios', 'Meus Diários', 'ph-book-bookmark')}
+                    ${this.renderTabButton('frequencia', 'Frequência', 'ph-check-circle')}
+                    ${this.renderTabButton('avaliacoes', 'Avaliações & Notas', 'ph-exam')}
+                    ${this.renderTabButton('desempenho', 'Desempenho', 'ph-chart-pie-slice')}
+                </div>
+
+                <!-- Tab Content -->
+                <div id="pedagogico-content" class="min-h-[500px]">
+                    ${this.renderCurrentTab(state)}
+                </div>
+            </div>
+        `;
+    },
+
+    renderTabButton(id, label, icon) {
+        const isActive = this.currentTab === id;
+        return `
+            <button onclick="app.pedagogico.setTab('${id}')" 
+                class="tab-pill ${isActive ? 'active' : ''}">
+                <i class="ph-bold ${icon}"></i>
+                ${label}
+            </button>
+        `;
+    },
+
+    setTab(tab) {
+        this.currentTab = tab;
+        document.getElementById('content-area').innerHTML = this.render(app.state);
+    },
+
+    renderCurrentTab(state) {
+        switch (this.currentTab) {
+            case 'diarios': return this.renderDiariosView();
+            case 'frequencia': return this.renderFrequenciaView();
+            case 'avaliacoes': return this.renderAvaliacoesView();
+            case 'desempenho': return this.renderDesempenhoView();
+            default: return this.renderDiariosView();
+        }
+    },
+
+    // --- VIEWS ---
+
+    renderDiariosView() {
+        return `
+            <div class="space-y-6">
+                <!-- Active Classes Grid -->
+                <h3 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-2">Suas Turmas Ativas</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    ${ucs.map(uc => `
-                        <div class="group bg-white rounded-xl border border-gray-100 hover:border-purple-200 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 p-6 relative overflow-hidden cursor-pointer" onclick="app.pedagogico.openModalUC('${uc.id}')">
-                            <div class="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
-                                <i class="ph ph-book-bookmark text-8xl text-purple-600"></i>
+                    ${this.mocks.turmas.map(t => `
+                        <div class="card p-0 overflow-hidden cursor-pointer group hover:ring-2 ring-indigo-500 transition-all shadow-sm hover:shadow-md">
+                            <div class="h-2 bg-indigo-500"></div>
+                            <div class="p-5">
+                                <div class="flex justify-between items-start mb-3">
+                                    <div class="badge bg-indigo-50 text-indigo-700 border-indigo-100">${t.turno}</div>
+                                    <i class="ph-fill ph-dots-three-outline-vertical text-slate-300 hover:text-slate-600"></i>
+                                </div>
+                                <h4 class="font-bold text-slate-900 text-lg leading-tight mb-2 group-hover:text-indigo-600 transition-colors">${t.nome}</h4>
+                                <p class="text-sm text-slate-500 mb-4 flex items-center gap-1">
+                                    <i class="ph-bold ph-book-open"></i> ${t.uc}
+                                </p>
+                                
+                                <div class="flex items-center justify-between pt-4 border-t border-slate-100">
+                                    <div class="text-xs text-slate-500">
+                                        <strong class="text-slate-900 text-sm">${t.alunos}</strong> Alunos
+                                    </div>
+                                    <div class="text-xs text-slate-500">
+                                        <strong class="text-slate-900 text-sm">${t.aulas_dadas}</strong> Aulas Reg.
+                                    </div>
+                                </div>
                             </div>
-                            
-                            <div class="relative z-10">
-                                <span class="inline-block px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider bg-gray-100 text-gray-600 mb-3">${uc.area_tecnologica || 'Geral'}</span>
-                                <h3 class="text-lg font-bold text-gray-800 mb-1 line-clamp-2 h-14">${uc.nome}</h3>
-                                <div class="flex items-center gap-4 text-sm text-gray-500 mb-4">
-                                    <span class="flex items-center gap-1"><i class="ph ph-clock"></i> ${uc.carga_horaria}h</span>
-                                    <span class="flex items-center gap-1" title="Capacidades Técnicas"><i class="ph ph-wrench"></i> ${uc.capacidades_tecnicas?.length || 0}</span>
-                                    <span class="flex items-center gap-1" title="Conhecimentos"><i class="ph ph-brain"></i> ${uc.conhecimentos?.length || 0}</span>
-                                </div>
-                                <div class="w-full h-1 bg-gray-100 rounded-full overflow-hidden">
-                                    <div class="h-full bg-purple-500 w-full transform -translate-x-full group-hover:translate-x-0 transition-transform duration-500"></div>
-                                </div>
+                            <div class="bg-slate-50 p-3 px-5 flex justify-between items-center group-hover:bg-indigo-50/50 transition-colors">
+                                <span class="text-xs font-bold text-indigo-600 uppercase tracking-wide">Acessar Diário</span>
+                                <i class="ph-bold ph-arrow-right text-indigo-400 group-hover:translate-x-1 transition-transform"></i>
                             </div>
                         </div>
                     `).join('')}
+                    
+                    <!-- Add Class Placeholder (if needed) -->
+                    <!-- <div class="card p-6 border-dashed border-2 border-slate-200 flex flex-col items-center justify-center text-center text-slate-400 hover:text-indigo-500 hover:border-indigo-300 transition-all cursor-pointer">
+                        <i class="ph-bold ph-plus-circle text-3xl mb-2"></i>
+                        <span class="font-bold text-sm">Vincular Nova Turma</span>
+                    </div> -->
+                </div>
+
+                <!-- Recent Logs -->
+                <div class="mt-8">
+                     <h3 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4">Registro Recente de Aulas</h3>
+                     <div class="token-list">
+                        ${this.mocks.aulas.map(aula => `
+                            <div class="token-item">
+                                <div class="token-icon ${aula.status === 'Registrada' ? 'green' : 'yellow'}">
+                                    <i class="ph-bold ${aula.status === 'Registrada' ? 'ph-check' : 'ph-clock'}"></i>
+                                </div>
+                                <div class="token-info">
+                                    <div class="token-name">${aula.conteudo}</div>
+                                    <div class="token-meta">
+                                        ${aula.data} • Técnico em Desenv. Sistemas
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <div class="badge ${aula.status === 'Registrada' ? 'badge-success' : 'badge-neutral'}">${aula.status}</div>
+                                    <button class="btn btn-secondary text-xs py-1 px-3">
+                                        <i class="ph-bold ph-pencil-simple"></i> Editar
+                                    </button>
+                                </div>
+                            </div>
+                        `).join('')}
+                     </div>
                 </div>
             </div>
         `;
     },
 
-    async openModalUC(ucId = null) {
-        let uc = null;
-
-        // Reset temp state
-        this.tempTags = { tecnicas: [], sociais: [], socioemocionais: [], conhecimentos: [] };
-
-        if (ucId) {
-            const { data, error } = await supabase.from('catalogo_ucs').select('*').eq('id', ucId).single();
-            if (error) { ui.toast('Erro ao carregar UC', 'error'); return; }
-            uc = data;
-            // Load existing tags into temp state
-            this.tempTags.tecnicas = uc.capacidades_tecnicas || [];
-            this.tempTags.sociais = uc.capacidades_sociais || [];
-            this.tempTags.socioemocionais = uc.capacidades_socioemocionais || [];
-            this.tempTags.conhecimentos = uc.conhecimentos || [];
-        }
-
-        const areasOptions = app.state.areasTecnologicas.map(a =>
-            `<option value="${a.nome}" ${uc?.area_tecnologica === a.nome ? 'selected' : ''}>${a.nome}</option>`
-        ).join('');
-
-        ui.openModalWindow(uc ? 'Editar Unidade Curricular' : 'Nova Unidade Curricular', `
-            <form onsubmit="app.pedagogico.submitUC(event, '${ucId || ''}')" class="space-y-6">
-                <!-- Basic Data -->
-                <div class="grid grid-cols-12 gap-4 bg-gray-50 p-4 rounded-xl border border-gray-100">
-                    <div class="col-span-12 md:col-span-6">
-                        <label class="input-label">Nome da Unidade Curricular</label>
-                        <input name="nome" required class="input-field" value="${uc?.nome || ''}" placeholder="Ex: Programação Front-end">
-                    </div>
-                    <div class="col-span-6 md:col-span-3">
-                        <label class="input-label">Área Tecnológica</label>
-                        <select name="area" class="input-field bg-white">
-                            <option value="">Selecione...</option>
-                            ${areasOptions}
-                        </select>
-                    </div>
-                    <div class="col-span-6 md:col-span-3">
-                        <label class="input-label">Carga Horária (h)</label>
-                        <input name="ch" type="number" required class="input-field" value="${uc?.carga_horaria || ''}">
-                    </div>
-                    <div class="col-span-12">
-                        <label class="input-label">Objetivo Geral</label>
-                        <textarea name="objetivo" class="input-field min-h-[80px]" placeholder="Descreva o objetivo formativo desta UC...">${uc?.objetivo || ''}</textarea>
-                    </div>
-                </div>
-
-                <!-- Tags Sections -->
-                <div class="space-y-4">
-                    ${this.renderTagSection('Capacidades Técnicas', 'tecnicas', 'ph-wrench', 'Ex: Desenvolver interfaces web responsivas...')}
-                    ${this.renderTagSection('Capacidades Sociais', 'sociais', 'ph-users', 'Ex: Trabalhar em equipe colaborativa...')}
-                    ${this.renderTagSection('Capacidades Socioemocionais', 'socioemocionais', 'ph-heart', 'Ex: Demonstrar resiliência...')}
-                    ${this.renderTagSection('Conhecimentos', 'conhecimentos', 'ph-brain', 'Ex: Sintaxe HTML5, Seletores CSS3...')}
-                </div>
-
-                <!-- Footer -->
-                <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                    <label class="input-label">Bibliografia Básica</label>
-                    <textarea name="bibliografia" class="input-field min-h-[60px]" placeholder="Livros e referências...">${uc?.bibliografia_basica || ''}</textarea>
-                </div>
-
-                <div class="flex gap-3 justify-end pt-4 border-t border-gray-100">
-                    <button type="button" onclick="ui.closeModal()" class="btn-secondary">Cancelar</button>
-                    ${ucId ? `<button type="button" onclick="app.pedagogico.deleteUC('${ucId}')" class="btn-secondary text-red-600 hover:bg-red-50 border-red-200">Excluir</button>` : ''}
-                    <button type="submit" class="btn-primary min-w-[200px]">
-                        <i class="ph ph-check"></i> Salvar Unidade
-                    </button>
-                </div>
-            </form>
-        `);
-
-        // Initial render of tags
-        this.updateAllTagLists();
-    },
-
-    // Helper to render a tag section HTML
-    renderTagSection(title, type, icon, placeholder) {
+    renderFrequenciaView() {
         return `
-            <div class="border border-gray-200 rounded-xl overflow-hidden">
-                <div class="bg-gray-50 px-4 py-3 border-b border-gray-200 flex justify-between items-center">
-                    <h4 class="font-bold text-gray-700 flex items-center gap-2"><i class="ph ${icon}"></i> ${title}</h4>
-                    <span class="text-xs bg-white px-2 py-1 rounded border border-gray-200 font-mono text-gray-500" id="count-${type}">0 itens</span>
+            <div class="flex flex-col items-center justify-center py-20 bg-white rounded-2xl border border-slate-200 border-dashed text-center">
+                 <div class="w-20 h-20 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mb-6 shadow-sm">
+                    <i class="ph-duotone ph-check-square-offset text-4xl"></i>
                 </div>
-                <div class="p-4 bg-white">
-                    <div class="flex gap-2 mb-3">
-                        <input type="text" id="input-${type}" class="flex-1 input-field" placeholder="${placeholder}" onkeydown="if(event.key === 'Enter'){event.preventDefault(); app.pedagogico.addTag('${type}')}">
-                        <button type="button" onclick="app.pedagogico.addTag('${type}')" class="btn-secondary px-4"><i class="ph ph-plus"></i></button>
-                    </div>
-                    <ul id="list-${type}" class="space-y-1 max-h-[150px] overflow-y-auto pr-2">
-                        <!-- Tags rendered here -->
-                    </ul>
+                <h3 class="text-xl font-bold text-slate-900 mb-2">Chamada Digital</h3>
+                <p class="text-slate-500 max-w-md mb-8">Selecione uma turma e aula para realizar o lançamento de frequência em lote ou individual.</p>
+                <div class="flex gap-4">
+                     <button class="btn btn-primary shadow-lg shadow-emerald-500/20 bg-emerald-600 border-emerald-600 hover:bg-emerald-700" onclick="ui.showToast('Selecione uma turma no Diário primeiro')">
+                        <i class="ph-bold ph-list-checks"></i>
+                        Iniciar Chamada
+                    </button>
+                    <button class="btn btn-secondary">
+                        <i class="ph-bold ph-clock-counter-clockwise"></i>
+                        Histórico
+                    </button>
                 </div>
             </div>
         `;
     },
 
-    addTag(type) {
-        const input = document.getElementById(`input-${type}`);
-        const value = input.value.trim();
-        if (value) {
-            this.tempTags[type].push(value);
-            input.value = '';
-            this.renderTagList(type);
-        }
+    renderAvaliacoesView() {
+        return `
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 h-full">
+                <!-- Config List -->
+                <div class="lg:col-span-2 space-y-4">
+                    <div class="flex-between mb-4">
+                        <h3 class="text-slate-900 font-bold text-lg">Cronograma de Avaliações</h3>
+                        <button class="btn btn-primary text-sm py-2 px-3">
+                            <i class="ph-bold ph-plus"></i> Nova Avaliação
+                        </button>
+                    </div>
+                    
+                    <div class="token-list">
+                        <div class="token-item group hover:border-indigo-300 cursor-pointer transition-all">
+                             <div class="token-date flex flex-col items-center justify-center p-2 bg-indigo-50 rounded-lg text-indigo-700 min-w-[3.5rem]">
+                                <span class="text-xs font-bold uppercase">Jan</span>
+                                <span class="text-xl font-bold">15</span>
+                             </div>
+                             <div class="token-info ml-2">
+                                <div class="token-name">Prova Teórica N1</div>
+                                <div class="token-meta">Lógica de Programação • Peso 4.0</div>
+                             </div>
+                             <div class="badge badge-neutral">Agendada</div>
+                        </div>
+
+                         <div class="token-item group hover:border-indigo-300 cursor-pointer transition-all">
+                             <div class="token-date flex flex-col items-center justify-center p-2 bg-orange-50 rounded-lg text-orange-700 min-w-[3.5rem]">
+                                <span class="text-xs font-bold uppercase">Jan</span>
+                                <span class="text-xl font-bold">28</span>
+                             </div>
+                             <div class="token-info ml-2">
+                                <div class="token-name">Projeto Prático - Calculadora</div>
+                                <div class="token-meta">Lógica de Programação • Peso 6.0</div>
+                             </div>
+                             <div class="badge badge-neutral">Planejada</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats Side -->
+                <div class="card bg-slate-900 text-white p-6 relative overflow-hidden">
+                    <div class="relative z-10">
+                        <h4 class="font-bold text-lg mb-4">Notas Pendentes</h4>
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="w-12 h-12 rounded-full border-4 border-indigo-500 border-t-white animate-spin"></div>
+                            <div>
+                                <div class="text-2xl font-bold">32</div>
+                                <div class="text-xs text-slate-400">Alunos sem nota (N1)</div>
+                            </div>
+                        </div>
+                        <button class="btn bg-white text-slate-900 hover:bg-slate-100 w-full font-bold">
+                            Lançar Notas Agora
+                        </button>
+                    </div>
+                     <div class="absolute -bottom-10 -right-10 w-32 h-32 bg-indigo-500 blur-3xl rounded-full opacity-30"></div>
+                </div>
+            </div>
+        `;
     },
 
-    removeTag(type, index) {
-        this.tempTags[type].splice(index, 1);
-        this.renderTagList(type);
+    renderDesempenhoView() {
+        return `
+             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div class="card p-6">
+                    <div class="text-xs text-slate-500 font-bold uppercase mb-2">Média Geral da Turma</div>
+                    <div class="text-4xl font-bold text-slate-900">7.8</div>
+                    <div class="text-xs text-green-600 font-bold mt-2 flex items-center gap-1">
+                        <i class="ph-bold ph-trend-up"></i> +0.4 vs mês anterior
+                    </div>
+                </div>
+                <div class="card p-6">
+                    <div class="text-xs text-slate-500 font-bold uppercase mb-2">Frequência Média</div>
+                    <div class="text-4xl font-bold text-slate-900">92%</div>
+                    <div class="text-xs text-slate-400 font-bold mt-2">Dentro da meta (85%)</div>
+                </div>
+                <div class="card p-6">
+                    <div class="text-xs text-slate-500 font-bold uppercase mb-2">Alunos em Risco</div>
+                    <div class="text-4xl font-bold text-amber-500">3</div>
+                    <div class="text-xs text-amber-600 font-bold mt-2">Atenção requerida</div>
+                </div>
+                 <div class="card p-6 bg-indigo-600 text-white">
+                    <div class="text-xs text-indigo-200 font-bold uppercase mb-2">Dias Letivos</div>
+                    <div class="text-4xl font-bold">14/200</div>
+                    <div class="w-full bg-indigo-800 h-1.5 rounded-full mt-3 overflow-hidden">
+                        <div class="bg-white h-full" style="width: 7%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card p-8 text-center border-dashed border-2 border-slate-200">
+                <i class="ph-duotone ph-chart-bar text-4xl text-slate-300 mb-4"></i>
+                <p class="text-slate-500">Gráficos detahados de evolução de competências serão exibidos aqui.</p>
+            </div>
+        `;
     },
 
-    renderTagList(type) {
-        const list = document.getElementById(`list-${type}`);
-        const count = document.getElementById(`count-${type}`);
-        const items = this.tempTags[type];
-
-        if (list) {
-            list.innerHTML = items.map((item, idx) => `
-                <li class="flex items-start gap-2 text-sm text-gray-600 group hover:bg-gray-50 p-1.5 rounded transition-colors bg-white border border-gray-100">
-                    <i class="ph ph-check-circle text-green-500 mt-0.5"></i>
-                    <span class="flex-1">${item}</span>
-                    <button type="button" onclick="app.pedagogico.removeTag('${type}', ${idx})" class="text-gray-300 hover:text-red-500 transition-colors">
-                        <i class="ph ph-x"></i>
-                    </button>
-                </li>
-            `).join('') || '<li class="text-xs text-gray-400 italic text-center py-2">Nenhum item adicionado.</li>';
-        }
-
-        if (count) {
-            count.innerText = `${items.length} itens`;
-        }
+    // --- ACTIONS ---
+    openNovoDiario() {
+        ui.alert('Registro de Aula', 'O formulário de registro de conteúdo e metodologia será aberto aqui.');
     },
 
-    updateAllTagLists() {
-        ['tecnicas', 'sociais', 'socioemocionais', 'conhecimentos'].forEach(type => this.renderTagList(type));
-    },
-
-    async submitUC(e, ucId) {
-        e.preventDefault();
-        const form = e.target;
-
-        const data = {
-            nome: form.nome.value,
-            area_tecnologica: form.area.value,
-            carga_horaria: form.ch.value,
-            objetivo: form.objetivo.value,
-            bibliografia_basica: form.bibliografia.value,
-            capacidades_tecnicas: this.tempTags.tecnicas,
-            capacidades_sociais: this.tempTags.sociais,
-            capacidades_socioemocionais: this.tempTags.socioemocionais,
-            conhecimentos: this.tempTags.conhecimentos
-        };
-
-        let result;
-        if (ucId) {
-            result = await supabase.from('catalogo_ucs').update(data).eq('id', ucId);
-        } else {
-            result = await supabase.from('catalogo_ucs').insert(data);
-        }
-
-        if (result.error) {
-            ui.toast('Erro ao salvar UC: ' + result.error.message, 'error');
-        } else {
-            ui.toast('Unidade Curricular salva com sucesso!');
-            ui.closeModal();
-            app.refreshCurrentView(); // Reload list
-        }
-    },
-
-    async deleteUC(ucId) {
-        if (!confirm('Deseja realmente excluir esta UC do catálogo? Isso não afeta matrizes que já importaram esta UC.')) return;
-
-        const { error } = await supabase.from('catalogo_ucs').delete().eq('id', ucId);
-
-        if (error) {
-            ui.toast('Erro ao excluir: ' + error.message, 'error');
-        } else {
-            ui.toast('UC excluída do catálogo.');
-            ui.closeModal();
-            app.refreshCurrentView();
-        }
+    openRelatorios() {
+        ui.showToast('Gerando indicadores pedagógicos...');
     }
 };
+
+// Make it global
+window.app = window.app || {};
+window.app.pedagogico = pedagogico;
