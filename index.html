@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Competenz | Gestão Educacional</title>
+    <link rel="icon" type="image/png" href="assets/images/logo-icon.png">
 
     <!-- Scripts & Icons -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
@@ -33,12 +34,9 @@
     <div id="app" class="app-container">
         <!-- Sidebar Navigation -->
         <aside class="sidebar">
-            <div class="brand">
-                <i class="ph-fill ph-student"></i>
-                <div>
-                    <h1>Competenz</h1>
-                    <span class="text-xs">Educação do Futuro</span>
-                </div>
+            <div class="brand flex items-center justify-center py-6 px-4">
+                <img src="assets/images/logo-competenz-white.png" alt="Competenz Logo"
+                    class="w-full h-auto object-contain transition-all duration-300">
             </div>
 
             <button class="mobile-menu-btn" onclick="document.querySelector('.sidebar').classList.toggle('menu-open')">
@@ -59,43 +57,62 @@
                     <li>
                         <a class="nav-item" onclick="app.navigate('planejamento')">
                             <i class="ph ph-briefcase"></i> Planejamento
-                            <i class="ph ph-caret-down nav-chevron"></i>
                         </a>
-                        <ul class="nav-sub-menu">
-                            <li><a class="nav-sub-item" onclick="app.navigateToTab('planejamento', 'cursos')">
-                                    Cursos
-                                </a></li>
-                            <li><a class="nav-sub-item" onclick="app.navigateToTab('planejamento', 'matrizes')">
-                                    Matrizes
-                                </a></li>
-                            <li><a class="nav-sub-item" onclick="app.navigateToTab('planejamento', 'ucs')">
-                                    Catálogo UCs
-                                </a></li>
-                            <li><a class="nav-sub-item" onclick="app.navigateToTab('planejamento', 'docentes')">
-                                    Docentes
-                                </a></li>
-                            <li><a class="nav-sub-item" onclick="app.navigateToTab('planejamento', 'turmas')">
-                                    Turmas
-                                </a></li>
-                            <li><a class="nav-sub-item" onclick="app.navigateToTab('planejamento', 'ambientes')">
-                                    Ambientes
-                                </a></li>
-                        </ul>
                     </li>
 
 
                     <!-- Separator for mobile/desktop logic -->
                     <li class="nav-separator"></li>
 
-                    <li><a class="nav-item" style="opacity: 0.8;">
+                    <li>
+                        <a class="nav-item" onclick="app.navigate('configuracoes')">
                             <i class="ph ph-gear"></i> Configurações
-                        </a></li>
+                        </a>
+                    </li>
                 </ul>
             </nav>
+
+            <div class="sidebar-footer hidden md:block"
+                style="padding: 1rem; font-size: 0.7rem; color: rgba(255,255,255,0.5); text-align: center; margin-top: auto;">
+                © 2026 Competenz<br>Feito com ❤️ por Alisson Almeida Q.
+            </div>
         </aside>
 
         <!-- Main Content Area -->
         <main class="main-panel">
+            <!-- User Header -->
+            <header
+                class="sticky top-0 z-50 bg-white border-b border-gray-200 px-8 py-4 flex justify-between items-center shadow-sm">
+                <div class="flex items-center gap-4">
+                    <div id="userInfo" class="flex items-center gap-3">
+                        <div id="userAvatar"
+                            class="w-10 h-10 rounded-full bg-gradient-to-br from-[#667eea] to-[#764ba2] flex items-center justify-center text-white font-semibold text-lg shadow-md border-2 border-white">
+                            <!-- Iniciais inseridas via JS -->
+                        </div>
+                        <div>
+                            <div id="userName" class="font-semibold text-gray-800 text-sm"></div>
+                            <div id="userRole"
+                                class="text-xs text-gray-500 font-medium bg-gray-100 px-2 py-0.5 rounded-full inline-block mt-0.5">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <button onclick="app.showUserMenu()"
+                        class="flex items-center gap-2 px-4 py-2 bg-gray-50 hover:bg-white text-gray-600 border border-gray-200 hover:border-[#667eea] hover:text-[#667eea] rounded-lg transition-all shadow-sm">
+                        <i class="ph ph-gear text-lg"></i>
+                        <span class="text-sm font-medium">Configurações</span>
+                    </button>
+
+                    <button onclick="app.logout()"
+                        class="flex items-center gap-2 px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 border border-red-100 hover:border-red-200 rounded-lg transition-all shadow-sm">
+                        <i class="ph ph-sign-out text-lg"></i>
+                        <span class="text-sm font-medium">Sair</span>
+                    </button>
+                </div>
+            </header>
+
             <div id="content-area" class="content-scroll">
                 <div style="height: 80vh; display: flex; align-items: center; justify-content: center;">
                     <div class="loading-spinner"></div>

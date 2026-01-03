@@ -848,7 +848,7 @@ select.input-field {
         border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         position: relative;
         /* Context for dropdown */
-        z-index: 50;
+        z-index: 100;
     }
 
     .mobile-menu-btn {

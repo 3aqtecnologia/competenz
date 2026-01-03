@@ -1,5 +1,6 @@
 
 import { supabase } from './services/supabase.js';
+import { auth } from './services/auth.js';
 import { renderDashboard } from './modules/dashboard.js';
 import { planejamento } from './modules/planejamento.js';
 import { matrizesView } from './modules/matrizesView.js';
@@ -9,6 +10,8 @@ import { turmas } from './modules/turmas.js';
 import { turmasView } from './modules/turmasView.js';
 import { ambientes } from './modules/ambientes.js?v=3';
 import { alocacaoAmbientes } from './modules/alocacaoAmbientes.js';
+import { usuarios } from './modules/usuarios.js';
+import { configuracoes } from './modules/configuracoes.js';
 import { ui } from './utils/ui.js';
 
 class App {
@@ -21,7 +24,10 @@ class App {
             matrices: [],
             teachers: [],
             classes: [],
-            areasTecnologicas: []
+            areasTecnologicas: [],
+            // User & Auth
+            currentUser: null,
+            currentProfile: null
         };
 
         // Modules Registry
@@ -35,17 +41,97 @@ class App {
         this.turmasView = turmasView;
         this.ambientes = ambientes;
         this.alocacaoAmbientes = alocacaoAmbientes;
+        this.usuarios = usuarios;
+        this.configuracoes = configuracoes;
         this.dashboard = { render: renderDashboard }; // Adapter
 
         // Expose UI helper globally for HTML onclick events
         window.ui = ui;
+        window.auth = auth;
     }
 
     async init() {
         console.log('Competenz App Initializing...');
+
+        // Verificar autenticação
+        const isAuthenticated = await auth.init();
+
+        if (!isAuthenticated) {
+            console.log('Usuário não autenticado, redirecionando para login...');
+            window.location.href = 'login.html';
+            return;
+        }
+
+        // Carregar dados do usuário no state
+        this.state.currentUser = auth.getCurrentUser();
+        this.state.currentProfile = auth.getCurrentProfile();
+
+        console.log('Usuário autenticado:', this.state.currentUser.nome_completo);
+        console.log('Perfil:', this.state.currentProfile.nome);
+
+        // Renderizar informações do usuário no header
+        this.renderUserInfo();
+
         await this.refreshData();
         this.navigate('dashboard');
     }
+
+
+    /* === USER INFO === */
+    renderUserInfo() {
+        const user = this.state.currentUser;
+        const profile = this.state.currentProfile;
+
+        if (!user || !profile) return;
+
+        const avatarEl = document.getElementById('userAvatar');
+        const userAvatarUrl = user.avatar_url || user.metadata?.avatar_url;
+
+        if (userAvatarUrl) {
+            // Renderizar Imagem
+            avatarEl.innerHTML = `<img src="${userAvatarUrl}" alt="${user.nome_completo}" class="w-full h-full rounded-full object-cover">`;
+            // Remover classes de inicial se necessário, mas imagem cobre o fundo
+        } else {
+            // Renderizar Iniciais
+            const initials = user.nome_completo
+                .split(' ')
+                .map(n => n[0])
+                .slice(0, 2)
+                .join('')
+                .toUpperCase();
+
+            avatarEl.innerHTML = initials;
+        }
+
+        document.getElementById('userName').textContent = user.nome_completo;
+        document.getElementById('userRole').textContent = profile.nome;
+
+        // Mas se quisermos acessar a IMAGEM especificamente de fora:
+        const img = avatarEl.querySelector('img');
+        if (img) img.id = 'header-user-avatar';
+    }
+
+    /* === LOGOUT === */
+    async logout() {
+        if (!confirm('Deseja realmente sair do sistema?')) {
+            return;
+        }
+
+        const result = await auth.logout();
+
+        if (result.success) {
+            window.location.href = 'login.html';
+        } else {
+            ui.toast('Erro ao fazer logout', 'error');
+        }
+    }
+
+    /* === USER MENU === */
+    showUserMenu() {
+        // Redirecionar para o módulo de configurações
+        this.navigate('configuracoes');
+    }
+
 
     /* === DATA LAYER === */
     async refreshData() {
@@ -171,6 +257,12 @@ class App {
                     break;
                 case 'alocacaoAmbientes':
                     html = alocacaoAmbientes.render(this.state);
+                    break;
+                case 'usuarios':
+                    html = usuarios.render();
+                    break;
+                case 'configuracoes':
+                    html = configuracoes.render(this.state);
                     break;
                 default:
                     html = `

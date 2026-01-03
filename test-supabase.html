@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Conexão - Supabase</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+
+<body>
+    <h1>Teste de Conexão Supabase</h1>
+    <div id="result"></div>
+
+    <script type="module">
+        const SUPABASE_URL = 'https://xblyvzxwvzqfveefuasd.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhibHl2enh3dnpxZnZlZWZ1YXNkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU5MDYwMzksImV4cCI6MjA4MTQ4MjAzOX0.ixqKmAGJES37ShNmr9f8aWGYRNbnDRBFTK9pZ0Z5m8E';
+
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const resultDiv = document.getElementById('result');
+
+        async function testConnection() {
+            resultDiv.innerHTML = '<p>Testando conexão...</p>';
+
+            try {
+                // Teste 1: Buscar perfis
+                console.log('Teste 1: Buscando perfis...');
+                const { data: perfis, error: perfisError } = await supabase
+                    .from('perfis')
+                    .select('*');
+
+                if (perfisError) {
+                    console.error('Erro ao buscar perfis:', perfisError);
+                    resultDiv.innerHTML += `<p style="color: red;">❌ Erro ao buscar perfis: ${perfisError.message}</p>`;
+                } else {
+                    console.log('Perfis encontrados:', perfis);
+                    resultDiv.innerHTML += `<p style="color: green;">✅ Perfis encontrados: ${perfis.length}</p>`;
+                }
+
+                // Teste 2: Buscar usuários
+                console.log('Teste 2: Buscando usuários...');
+                const { data: usuarios, error: usuariosError } = await supabase
+                    .from('usuarios')
+                    .select('*');
+
+                if (usuariosError) {
+                    console.error('Erro ao buscar usuários:', usuariosError);
+                    resultDiv.innerHTML += `<p style="color: red;">❌ Erro ao buscar usuários: ${usuariosError.message}</p>`;
+                } else {
+                    console.log('Usuários encontrados:', usuarios);
+                    resultDiv.innerHTML += `<p style="color: green;">✅ Usuários encontrados: ${usuarios.length}</p>`;
+                }
+
+                // Teste 3: Login
+                console.log('Teste 3: Tentando login...');
+                const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+                    email: 'admin@competenz.com.br',
+                    password: 'admin123'
+                });
+
+                if (loginError) {
+                    console.error('Erro no login:', loginError);
+                    resultDiv.innerHTML += `<p style="color: red;">❌ Erro no login: ${loginError.message}</p>`;
+                } else {
+                    console.log('Login bem-sucedido:', loginData);
+                    resultDiv.innerHTML += `<p style="color: green;">✅ Login bem-sucedido!</p>`;
+
+                    // Teste 4: Buscar dados do usuário logado
+                    console.log('Teste 4: Buscando dados do usuário logado...');
+                    const { data: userData, error: userError } = await supabase
+                        .from('usuarios')
+                        .select('*')
+                        .eq('email', 'admin@competenz.com.br')
+                        .single();
+
+                    if (userError) {
+                        console.error('Erro ao buscar dados do usuário:', userError);
+                        resultDiv.innerHTML += `<p style="color: red;">❌ Erro ao buscar dados do usuário: ${userError.message}</p>`;
+                    } else {
+                        console.log('Dados do usuário:', userData);
+                        resultDiv.innerHTML += `<p style="color: green;">✅ Dados do usuário carregados!</p>`;
+
+                        // Teste 5: Buscar perfil do usuário
+                        console.log('Teste 5: Buscando perfil do usuário...');
+                        const { data: perfilData, error: perfilError } = await supabase
+                            .from('perfis')
+                            .select('*')
+                            .eq('id', userData.perfil_id)
+                            .single();
+
+                        if (perfilError) {
+                            console.error('Erro ao buscar perfil:', perfilError);
+                            resultDiv.innerHTML += `<p style="color: red;">❌ Erro ao buscar perfil: ${perfilError.message}</p>`;
+                        } else {
+                            console.log('Perfil do usuário:', perfilData);
+                            resultDiv.innerHTML += `<p style="color: green;">✅ Perfil carregado: ${perfilData.nome}</p>`;
+                        }
+                    }
+                }
+
+            } catch (error) {
+                console.error('Erro geral:', error);
+                resultDiv.innerHTML += `<p style="color: red;">❌ Erro geral: ${error.message}</p>`;
+            }
+        }
+
+        testConnection();
+    </script>
+</body>
+
+</html>

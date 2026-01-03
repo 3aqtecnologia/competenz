@@ -8,6 +8,44 @@
 
 ## 🆕 Histórico de Versões
 
+### v2.0 - UI Premium & Dashboard Inteligente (Jan/2026)
+
+- **✨ UI/UX Premium Refinado**:
+  - **Login Split Screen**: Nova experiência de login com layout dividido, animações suaves e identidade visual reforçada (Dark Navy + Lime Green).
+  - **Recuperação de Senha Completa**: Página de "Esqueceu a senha" redesenhada para total consistência visual com o login.
+  - **Branding Coeso**: Padronização de logos, favicons e assinaturas de rodapé em todo o sistema.
+- **🧠 Dashboard Inteligente (Smart Dashboard)**:
+  - **Contexto de Usuário**: O dashboard agora adapta saudação, métricas e atalhos de ação baseados no perfil logado (Docente vs Coordenador vs Secretaria).
+  - **Dicas Dinâmicas**: Cards de dicas rotativos personalizados para gestão escolar.
+- **📱 Mobile First & Acessibilidade**:
+  - **Sidebar Responsiva**: Ajustes de Z-Index e comportamento da sidebar em dispositivos móveis.
+  - **Adaptação de Logos**: Tamanhos de logo otimizados para diferentes viewports.
+
+### v1.9 - Sistema SaaS com ACL (Jan/2026)
+
+- **🔐 Sistema de Autenticação Completo**:
+  - Integração com Supabase Auth para login seguro
+  - Página de login moderna e responsiva
+  - Gestão de sessão com redirecionamento automático
+  - Logout com confirmação
+- **👥 Gestão de Usuários e Perfis**:
+  - 6 perfis pré-configurados com permissões específicas
+  - Interface administrativa para gestão de usuários
+  - Vinculação de usuários a turmas e docentes
+  - Controle de acesso baseado em perfis (ACL)
+- **🛡️ Controle de Acesso (ACL)**:
+  - Permissões granulares por módulo e ação
+  - Filtragem automática de dados baseada em permissões
+  - Visualização condicional de menus e funcionalidades
+  - Segurança em nível de interface e dados
+- **📋 Perfis Implementados**:
+  - **Administrador**: Acesso total ao sistema
+  - **Analista de Educação**: Acompanhamento de turmas vinculadas
+  - **Coordenador Pedagógico**: Gestão de docentes vinculados
+  - **Assistente Educacional**: Gerenciamento de dados de turmas
+  - **Planejamento**: Gestão completa do módulo de planejamento
+  - **Secretaria**: Matrículas, documentos e frequência
+
 ### v1.8 - Refinamento de Relatórios e UX (Dez/2025)
 
 - **Interface de Relatório Otimizada**:
@@ -150,6 +188,35 @@ O projeto segue um rigoroso guia de estilos e melhores práticas de UX, document
 - **Feedback Imediato**: Respostas visuais para todas as interações do usuário.
 - **Acessibilidade**: Foco em contraste, navegação por teclado e semântica.
 - **Design Responsivo**: Adaptável para desktop e dispositivos móveis.
+
+## 🔐 Autenticação e Segurança
+
+O Competenz implementa um sistema robusto de autenticação e controle de acesso:
+
+### Sistema de Autenticação
+
+- **Supabase Auth**: Autenticação segura com JWT tokens
+- **Gestão de Sessão**: Verificação automática de sessão em cada carregamento
+- **Login/Logout**: Interface moderna e segura
+- **Redirecionamento Automático**: Proteção de rotas não autenticadas
+
+### Controle de Acesso (ACL)
+
+- **Baseado em Perfis**: 6 perfis com permissões específicas
+- **Permissões Granulares**: Controle por módulo e ação (criar, editar, excluir, visualizar)
+- **Filtragem de Dados**: Usuários veem apenas dados permitidos
+- **Vinculações**: Analistas e Coordenadores veem apenas turmas/docentes vinculados
+
+### Perfis Disponíveis
+
+1. **Administrador**: Gestão completa do sistema
+2. **Analista de Educação**: Acompanhamento de turmas vinculadas
+3. **Coordenador Pedagógico**: Gestão de docentes vinculados
+4. **Assistente Educacional**: Gerenciamento de dados de turmas
+5. **Planejamento**: Gestão de cursos, matrizes e turmas
+6. **Secretaria**: Matrículas, documentos e frequência
+
+📖 **Documentação Completa**: Veja `docs/SISTEMA_SAAS.md` e `docs/CONFIGURACAO_SUPABASE.md`
 
 ## 📁 Estrutura do Projeto
 

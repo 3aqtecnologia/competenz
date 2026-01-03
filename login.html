@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | Competenz</title>
+    <link rel="icon" type="image/png" href="assets/images/logo-icon.png">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <!-- Libraries -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                    },
+                    colors: {
+                        // Style Guide Colors
+                        navy: {
+                            DEFAULT: '#1a1a2e', // Dark Navy
+                            light: '#2a2a40',
+                        },
+                        lime: {
+                            DEFAULT: '#b3ff50', // Lime Green (Accent)
+                            hover: '#a0e640',
+                        },
+                        purple: {
+                            DEFAULT: '#8e44ad', // Deep Purple
+                        },
+                        blue: {
+                            DEFAULT: '#3498db', // Light Blue
+                        },
+                        mint: {
+                            DEFAULT: '#2ecc71', // Mint Green
+                        },
+                        bg: {
+                            light: '#f4f4f9', // Light Gray/White
+                        },
+                        text: {
+                            dark: '#333333', // Dark Gray Text
+                            muted: '#7f8c8d', // Light Gray Text
+                        }
+                    },
+                    animation: {
+                        'fade-in-up': 'fadeInUp 0.6s ease-out forwards',
+                        'float': 'float 6s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        fadeInUp: {
+                            '0%': { opacity: '0', transform: 'translateY(10px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        },
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #f4f4f9;
+            /* Style Guide BG */
+        }
+
+        .glass-panel {
+            background: rgba(26, 26, 46, 0.4);
+            /* Dark Navy based glass */
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Input styling adjustments */
+        .input-field {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .input-field:focus {
+            box-shadow: 0 0 0 3px rgba(179, 255, 80, 0.2);
+            /* Lime Green glow */
+        }
+
+        /* Smooth Input Autofill fix */
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover,
+        input:-webkit-autofill:focus,
+        input:-webkit-autofill:active {
+            transition: background-color 5000s ease-in-out 0s;
+            -webkit-text-fill-color: #333 !important;
+        }
+    </style>
+</head>
+
+<body class="h-screen overflow-hidden flex w-full">
+
+    <!-- Left Section: Dark Navy Branding -->
+    <aside class="hidden lg:flex lg:w-[45%] bg-navy relative flex-col justify-between p-12 overflow-hidden">
+
+        <!-- Abstract Shapes & Gradients -->
+        <!-- Lime Green Glow -->
+        <div
+            class="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-lime opacity-10 rounded-full blur-[100px] animate-float">
+        </div>
+
+        <!-- Purple Glow -->
+        <div class="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-purple opacity-20 rounded-full blur-[100px] animate-float"
+            style="animation-delay: -3s"></div>
+
+        <!-- Content -->
+        <div class="relative z-10 h-full flex flex-col justify-center">
+
+            <img src="assets/images/logo-competenz-white.png" alt="Competenz"
+                class="h-28 object-contain mb-12 self-start animate-fade-in-up">
+
+            <div class="space-y-6 max-w-lg animate-fade-in-up" style="animation-delay: 0.2s">
+                <h1 class="text-5xl font-bold text-white leading-tight">
+                    Gestão <span class="text-lime">Educacional</span> Simplificada.
+                </h1>
+                <p class="text-gray-300 text-lg font-light leading-relaxed">
+                    Potencialize sua instituição com uma plataforma que une tecnologia, design e eficiência.
+                </p>
+
+
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="relative z-10 text-gray-400 text-xs w-full border-t border-white/5 pt-6 animate-fade-in-up flex flex-col gap-1"
+            style="animation-delay: 0.4s">
+            <span class="font-bold text-white">© 2026 Competenz</span>
+            <span>Feito com ❤️ por Alisson Almeida Q.</span>
+        </div>
+    </aside>
+
+    <!-- Right Section: Login Form -->
+    <main class="w-full lg:w-[55%] flex flex-col justify-center items-center p-8 bg-bg-light relative">
+
+        <div class="w-full max-w-[400px] animate-fade-in-up">
+
+            <!-- Mobile Logo -->
+            <div class="lg:hidden mb-10 text-center">
+                <img src="assets/images/logo-competenz.png" alt="Competenz" class="h-32 mx-auto">
+            </div>
+
+            <div class="mb-10">
+                <h2 class="text-3xl font-bold text-navy mb-2">Bem-vindo de volta</h2>
+                <p class="text-text-muted">Insira suas credenciais para acessar.</p>
+            </div>
+
+            <div id="alert" class="hidden mb-6 p-4 rounded-xl text-sm font-medium flex items-center gap-3"></div>
+
+            <form id="loginForm" class="space-y-6">
+
+                <div class="space-y-2">
+                    <label class="text-sm font-semibold text-navy" for="email">E-mail</label>
+                    <div class="relative">
+                        <i class="ph ph-envelope absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg"></i>
+                        <input type="email" id="email" required
+                            class="input-field w-full h-12 pl-12 pr-4 bg-white border border-gray-200 rounded-xl text-text-dark placeholder:text-gray-300 focus:outline-none focus:border-lime focus:ring-0 text-sm font-medium"
+                            placeholder="exemplo@escola.com">
+                    </div>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="text-sm font-semibold text-navy flex justify-between items-center" for="password">
+                        Senha
+                        <a href="recuperar-senha.html"
+                            class="text-purple hover:text-purple/80 text-xs font-bold transition-colors">Esqueceu a
+                            senha?</a>
+                    </label>
+                    <div class="relative">
+                        <i class="ph ph-lock absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg"></i>
+                        <input type="password" id="password" required
+                            class="input-field w-full h-12 pl-12 pr-12 bg-white border border-gray-200 rounded-xl text-text-dark placeholder:text-gray-300 focus:outline-none focus:border-lime focus:ring-0 text-sm font-medium"
+                            placeholder="••••••••">
+                        <button type="button" onclick="togglePassword()"
+                            class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-navy transition-colors">
+                            <i id="toggleIcon" class="ph ph-eye-slash text-lg"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <div class="relative flex items-center cursor-pointer">
+                        <input type="checkbox" id="rememberMe" class="peer h-0 w-0 opacity-0">
+                        <label for="rememberMe"
+                            class="w-5 h-5 border-2 border-gray-300 rounded peer-checked:bg-lime peer-checked:border-lime transition-all cursor-pointer flex items-center justify-center">
+                            <i
+                                class="ph-bold ph-check text-navy text-[10px] opacity-0 peer-checked:opacity-100 transform scale-50 peer-checked:scale-100 transition-all"></i>
+                        </label>
+                    </div>
+                    <label for="rememberMe" class="text-sm text-text-muted cursor-pointer select-none">Manter
+                        conectado</label>
+                </div>
+
+                <button type="submit" id="btnLogin"
+                    class="w-full h-14 bg-lime hover:bg-lime-hover text-navy font-bold rounded-xl shadow-lg shadow-lime/20 hover:shadow-lime/40 transform hover:-translate-y-1 transition-all duration-200 flex items-center justify-center gap-2 group">
+                    <span id="btnText">Entrar na Plataforma</span>
+                    <i id="btnIcon" class="ph-bold ph-arrow-right group-hover:translate-x-1 transition-transform"></i>
+
+                    <div id="btnLoading" class="hidden flex items-center gap-2">
+                        <svg class="animate-spin h-5 w-5 text-navy" xmlns="http://www.w3.org/2000/svg" fill="none"
+                            viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
+                            </circle>
+                            <path class="opacity-75" fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                        </svg>
+                        <span>Verificando...</span>
+                    </div>
+                </button>
+
+            </form>
+
+            <div class="mt-8 pt-8 border-t border-gray-200 text-center">
+                <p class="text-sm text-text-muted">
+                    Ainda não tem acesso?
+                    <a href="#" class="text-navy font-bold hover:underline">Solicite aqui</a>
+                </p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Logic -->
+    <script type="module">
+        import { supabase } from './assets/js/services/supabase.js';
+        import { auth } from './assets/js/services/auth.js';
+
+        const form = document.getElementById('loginForm');
+        const btnLogin = document.getElementById('btnLogin');
+        const btnText = document.getElementById('btnText');
+        const btnLoading = document.getElementById('btnLoading');
+        const btnIcon = document.getElementById('btnIcon');
+        const alertBox = document.getElementById('alert');
+
+        function showAlert(message, type = 'error') {
+            const styles = type === 'error'
+                ? 'bg-red-50 text-red-600 border border-red-100'
+                : 'bg-green-50 text-green-800 border border-green-200';
+
+            alertBox.className = `mb-6 p-4 rounded-xl text-sm font-medium flex items-center gap-3 animate-fade-in-up ${styles}`;
+            alertBox.innerHTML = `<span>${message}</span>`;
+            alertBox.classList.remove('hidden');
+
+            setTimeout(() => {
+                alertBox.classList.add('hidden');
+            }, 5000);
+        }
+
+        function setLoading(loading) {
+            btnLogin.disabled = loading;
+            if (loading) {
+                btnText.classList.add('hidden');
+                btnIcon.classList.add('hidden');
+                btnLoading.classList.remove('hidden');
+                btnLogin.classList.add('opacity-80', 'cursor-not-allowed');
+            } else {
+                btnText.classList.remove('hidden');
+                btnIcon.classList.remove('hidden');
+                btnLoading.classList.add('hidden');
+                btnLogin.classList.remove('opacity-80', 'cursor-not-allowed');
+            }
+        }
+
+        auth.init().then(isAuthenticated => {
+            if (isAuthenticated) window.location.href = 'index.html';
+        });
+
+        window.togglePassword = function () {
+            const passwordInput = document.getElementById('password');
+            const toggleIcon = document.getElementById('toggleIcon');
+
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggleIcon.classList.replace('ph-eye-slash', 'ph-eye');
+                toggleIcon.classList.add('text-navy');
+            } else {
+                passwordInput.type = 'password';
+                toggleIcon.classList.replace('ph-eye', 'ph-eye-slash');
+                toggleIcon.classList.remove('text-navy');
+            }
+        };
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+
+            if (!email || !password) return showAlert('Preencha e-mail e senha.');
+
+            setLoading(true);
+            try {
+                // UX Delay
+                await new Promise(r => setTimeout(r, 600));
+
+                const result = await auth.login(email, password);
+                if (result.success) {
+                    showAlert('Login realizado com sucesso!', 'success');
+                    window.location.href = 'index.html';
+                } else {
+                    showAlert(result.error || 'Credenciais incorretas.');
+                    setLoading(false);
+                }
+            } catch (error) {
+                console.error(error);
+                showAlert('Erro de conexão.');
+                setLoading(false);
+            }
+        });
+    </script>
+</body>
+
+</html>
