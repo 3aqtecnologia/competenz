@@ -8,6 +8,19 @@
 
 ## 🆕 Histórico de Versões
 
+### v2.3 - Automação Docente & Style Guide 2.0 (Jan/2026)
+
+- **🎨 Style Guide 2.0 (Premium UI)**:
+  - **Identidade Visual Refinada**: Implementação rigorosa do novo guia de estilos com paleta Dark Navy (`#1a1a2e`) e Lime Green (`#b3ff50`).
+  - **Design System Unificado**: Migração completa para **Tailwind CSS** com configuração centralizada em `tailwind.config`.
+  - **Componentes Modernos**: Botões, Inputs e Cards com bordas arredondadas (Radius 12px/16px) e sombras suaves ("Float" & "Glow").
+  - **Limpeza de Código**: Remoção de 8 arquivos CSS legados, centralizando a estilização em `app.css` e utilitários Tailwind.
+- **🤖 Automação Docente**:
+  - **Cadastro Automático**: Criação automática de usuário no sistema ao cadastrar um docente no Planejamento.
+  - **Perfil "Docente"**: Novo perfil com permissões específicas para autogestão (Meus Dados, Minha Disponibilidade).
+  - **Fluxo de Lotação**: Notificações automáticas de alocação em turmas e fluxo de Aceite/Recusa para o professor.
+  - **Metadados Inteligentes**: Geração de senha inicial baseada no CPF e flags de "Primeiro Acesso".
+
 ### v2.2 - Auditoria, Perfil & Localização (Jan/2026)
 
 - **🔒 Auditoria e Segurança**:

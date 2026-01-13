@@ -24,6 +24,77 @@
         window.dayjs = dayjs;
     </script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Inter"', 'sans-serif'],
+                        display: ['"Outfit"', 'sans-serif'],
+                    },
+                    colors: {
+                        colors: {
+                            navy: {
+                                DEFAULT: '#1a1a2e', // Dark Navy
+                                light: '#2a2a40',
+                            },
+                            lime: {
+                                DEFAULT: '#b3ff50', // Lime Green
+                                hover: '#a0e640',
+                            },
+                            purple: {
+                                DEFAULT: '#8e44ad', // Deep Purple
+                            },
+                            blue: {
+                                DEFAULT: '#3498db', // Light Blue
+                            },
+                            mint: {
+                                DEFAULT: '#2ecc71', // Mint Green
+                            },
+                            gray: {
+                                50: '#f9fafb',
+                                100: '#f4f4f5', // Light Gray
+                                200: '#e4e4e7',
+                                300: '#d4d4d8',
+                                400: '#a1a1aa',
+                                500: '#71717a',
+                                600: '#52525b',
+                                700: '#3f3f46',
+                                800: '#27272a',
+                                900: '#18181b', // Dark Gray
+                            },
+                            status: {
+                                error: '#e74c3c',
+                                alert: '#e67e22',
+                                success: '#2ecc71',
+                                warning: '#f1c40f',
+                            },
+                            bg: {
+                                body: '#1a1a2e', // Dark Navy Background (Sidebar area)
+                                panel: '#f4f4f9', // Light Gray (Main Content)
+                                card: '#FFFFFF',
+                            },
+                            text: {
+                                primary: '#333333', // Dark Gray Text
+                                secondary: '#64748B',
+                                tertiary: '#94A3B8',
+                                inverse: '#FFFFFF',
+                            }
+                        },
+                        borderRadius: {
+                            'xl': '12px',
+                            '2xl': '16px',
+                            '3xl': '24px',
+                        },
+                        boxShadow: {
+                            card: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.02)',
+                            float: '0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.08)',
+                            glow: '0 0 15px rgba(179, 255, 80, 0.4)', // Lime glow
+                        }
+                    }
+                }
+            }
+    </script>
 
     <!-- Unified Design System -->
     <link rel="stylesheet" href="assets/css/app.css">
