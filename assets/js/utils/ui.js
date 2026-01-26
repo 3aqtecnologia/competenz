@@ -43,6 +43,11 @@ export const ui = {
         }
     },
 
+    // Alias para compatibilidade
+    openModal(title, innerHTML, className = '') {
+        return this.openModalWindow(title, innerHTML, className);
+    },
+
     closeModal() {
         const backdrop = document.getElementById('modal-backdrop');
         backdrop.classList.remove('visible');
