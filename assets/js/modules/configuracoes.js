@@ -78,7 +78,22 @@ export const configuracoes = {
             case 'perfil':
                 return this.renderPerfilTab();
             case 'usuarios':
-                return auth.isAdmin() ? usuarios.render() : this.renderAccessDenied();
+                if (auth.isAdmin()) {
+                    // Garantir que os dados estão carregados
+                    if (usuarios.usuarios.length === 0 || usuarios.perfis.length === 0) {
+                        usuarios.loadData().then(() => {
+                            window.app.renderView('configuracoes');
+                        });
+                        return `
+                            <div class="flex flex-col items-center justify-center py-16">
+                                <div class="loading-spinner mb-4"></div>
+                                <p class="text-gray-600">Carregando dados...</p>
+                            </div>
+                        `;
+                    }
+                    return usuarios.render();
+                }
+                return this.renderAccessDenied();
             default:
                 return this.renderGeralTab();
         }
