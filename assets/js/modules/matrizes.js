@@ -61,6 +61,33 @@ export const matrizes = {
     },
 
     async delete(id) {
+        // 1. Verificar se há turmas vinculadas a esta matriz
+        const { data: turmasVinculadas, error: errorTurmas } = await supabase
+            .from('turmas')
+            .select('id, nome, codigo_sge')
+            .eq('matriz_id', id);
+
+        if (errorTurmas) throw errorTurmas;
+
+        if (turmasVinculadas && turmasVinculadas.length > 0) {
+            const turmasNomes = turmasVinculadas.map(t => t.nome || t.codigo_sge).join(', ');
+            throw new Error(`Não é possível excluir esta matriz pois ela está vinculada a ${turmasVinculadas.length} turma(s): ${turmasNomes}. Remova as vinculações primeiro.`);
+        }
+
+        // 2. Verificar se há cursos vinculados a esta matriz
+        const { data: cursosVinculados, error: errorCursos } = await supabase
+            .from('cursos')
+            .select('id, nome')
+            .eq('matriz_id', id);
+
+        if (errorCursos) throw errorCursos;
+
+        if (cursosVinculados && cursosVinculados.length > 0) {
+            const cursosNomes = cursosVinculados.map(c => c.nome).join(', ');
+            throw new Error(`Não é possível excluir esta matriz pois ela está vinculada a ${cursosVinculados.length} curso(s): ${cursosNomes}. Remova as vinculações primeiro.`);
+        }
+
+        // 3. Se não há vínculos, pode excluir
         const { error } = await supabase.from('matrizes').delete().eq('id', id);
         if (error) throw error;
         return true;
@@ -153,7 +180,7 @@ export const matrizes = {
     async importFromCatalog(catalogId, matrizId) {
         // 1. Get Catalog Item
         const { data: template, error: errTpl } = await supabase
-            .from('catalogo_ucs')
+            .from('unidades_curriculares')
             .select('*')
             .eq('id', catalogId)
             .single();

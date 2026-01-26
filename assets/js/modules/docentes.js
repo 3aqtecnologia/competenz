@@ -10,6 +10,12 @@ export const docentes = {
                 docentes_areas (
                     area_id,
                     areas_tecnologicas (nome, id)
+                ),
+                lotacoes_turma (
+                    id,
+                    data_inicio,
+                    data_fim,
+                    turmas (id, codigo, nome)
                 )
             `)
             .order('nome');

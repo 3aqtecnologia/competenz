@@ -466,50 +466,42 @@ export const usuarios = {
         const html = `
             <form id="userForm" class="space-y-6">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="md:col-span-2">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                            Nome Completo *
-                        </label>
+                    <div class="md:col-span-2 input-group">
+                        <label class="input-label">Nome Completo *</label>
                         <input 
                             type="text" 
                             name="nome_completo" 
-                            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all" 
+                            class="input-field" 
                             required
                         >
                     </div>
 
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                            E-mail *
-                        </label>
+                    <div class="input-group">
+                        <label class="input-label">E-mail *</label>
                         <input 
                             type="email" 
                             name="email" 
-                            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all" 
+                            class="input-field" 
                             required
                         >
                     </div>
 
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                            Telefone
-                        </label>
+                    <div class="input-group">
+                        <label class="input-label">Telefone</label>
                         <input 
                             type="tel" 
                             name="telefone" 
                             data-mask="phone"
                             placeholder="(00) 00000-0000"
-                            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                            class="input-field"
                         >
                     </div>
 
-                    <div class="md:col-span-2">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                            Perfil de Acesso *
-                        </label>
+                    <div class="md:col-span-2 input-group">
+                        <label class="input-label">Perfil de Acesso *</label>
                         <select 
                             name="perfil_id" 
-                            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all" 
+                            class="input-field cursor-pointer" 
                             required 
                             onchange="usuarios.handlePerfilChange(this.value)"
                         >
@@ -523,17 +515,17 @@ export const usuarios = {
                     <div id="vinculacoes" class="md:col-span-2" style="display: none;"></div>
                 </div>
 
-                <div class="flex gap-3 pt-4 border-t">
+                <div class="flex gap-3 pt-4 border-t border-gray-200">
                     <button 
                         type="button" 
                         onclick="ui.closeModal()" 
-                        class="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors"
+                        class="btn btn-secondary flex-1"
                     >
                         Cancelar
                     </button>
                     <button 
                         type="submit" 
-                        class="flex-1 px-4 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg hover:from-purple-700 hover:to-indigo-700 font-medium transition-all"
+                        class="btn btn-primary flex-1"
                     >
                         Criar Usuário
                     </button>
@@ -705,53 +697,45 @@ export const usuarios = {
                 <input type="hidden" name="id" value="${user.id}">
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="md:col-span-2">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                            Nome Completo *
-                        </label>
+                    <div class="md:col-span-2 input-group">
+                        <label class="input-label">Nome Completo *</label>
                         <input 
                             type="text" 
                             name="nome_completo" 
                             value="${user.nome_completo || ''}"
-                            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all" 
+                            class="input-field" 
                             required
                         >
                     </div>
 
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                            E-mail *
-                        </label>
+                    <div class="input-group">
+                        <label class="input-label">E-mail *</label>
                         <input 
                             type="email" 
                             name="email" 
                             value="${user.email || ''}"
-                            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all" 
+                            class="input-field" 
                             required
                         >
                     </div>
 
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                            Telefone
-                        </label>
+                    <div class="input-group">
+                        <label class="input-label">Telefone</label>
                         <input 
                             type="tel" 
                             name="telefone" 
                             value="${user.telefone || ''}"
                             data-mask="phone"
                             placeholder="(00) 00000-0000"
-                            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                            class="input-field"
                         >
                     </div>
 
-                    <div class="md:col-span-2">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                            Perfil de Acesso *
-                        </label>
+                    <div class="md:col-span-2 input-group">
+                        <label class="input-label">Perfil de Acesso *</label>
                         <select 
                             name="perfil_id" 
-                            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all" 
+                            class="input-field cursor-pointer" 
                             required 
                             onchange="usuarios.handlePerfilChangeEdit(this.value)"
                         >
@@ -779,17 +763,17 @@ export const usuarios = {
                     </div>
                 </div>
 
-                <div class="flex gap-3 pt-4 border-t">
+                <div class="flex gap-3 pt-4 border-t border-gray-200">
                     <button 
                         type="button" 
                         onclick="ui.closeModal()" 
-                        class="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors"
+                        class="btn btn-secondary flex-1"
                     >
                         Cancelar
                     </button>
                     <button 
                         type="submit" 
-                        class="flex-1 px-4 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg hover:from-purple-700 hover:to-indigo-700 font-medium transition-all"
+                        class="btn btn-primary flex-1"
                     >
                         Salvar Alterações
                     </button>

@@ -2,6 +2,7 @@
 import { supabase } from '../services/supabase.js';
 import { ui } from '../utils/ui.js';
 import { ux } from '../utils/ux.js';
+import { matrizes } from './matrizes.js';
 
 export const planejamento = {
     currentTab: 'cursos',
@@ -345,13 +346,13 @@ export const planejamento = {
                 </div>
                 
                 <!-- Filters -->
-                <div class="card" style="padding: 1rem; margin-bottom: 1.5rem; display: flex; gap: 1rem;">
-                    <div style="flex: 1; position: relative;">
-                        <i class="ph ph-magnifying-glass" style="position: absolute; left: 1rem; top: 1rem; color: #94a3b8;"></i>
-                        <input id="uc-search" onkeyup="app.planejamento.filterUCs()" class="input-field" style="padding-left: 2.5rem;" placeholder="Buscar por nome da UC...">
+                <div class="card flex flex-wrap gap-4 p-4 mb-6 sticky top-0 bg-[#F8FAFC]/80 backdrop-blur z-10 border border-slate-200/60 shadow-sm">
+                    <div class="relative flex-1">
+                        <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <input id="uc-search" onkeyup="app.planejamento.filterUCs()" class="input-field pl-10" placeholder="Buscar por nome da UC...">
                     </div>
-                    <div style="width: 200px;">
-                        <select id="uc-filter-area" onchange="app.planejamento.filterUCs()" class="input-field">
+                    <div class="w-full md:w-56">
+                        <select id="uc-filter-area" onchange="app.planejamento.filterUCs()" class="input-field cursor-pointer">
                             <option value="">Todas as Áreas</option>
                             ${state.areasTecnologicas.map(a => `<option value="${a.nome}">${a.nome}</option>`).join('')}
                         </select>
@@ -371,7 +372,7 @@ export const planejamento = {
         if (!container) return;
 
         // Fetch all UCs
-        const { data: ucs, error } = await supabase.from('catalogo_ucs').select('*').order('nome');
+        const { data: ucs, error } = await supabase.from('unidades_curriculares').select('*').order('nome');
 
         if (error) {
             container.innerHTML = `<div class="card p-4 text-center text-red-500">Erro ao carregar catálogo: ${error.message}</div>`;
@@ -391,23 +392,38 @@ export const planejamento = {
         }
 
         container.innerHTML = ucs.map(uc => `
-            <div class="token-item group" onclick="app.planejamento.openModalCatalogoUC('${uc.id}')">
-                <div class="token-icon ${this.getAreaColor(uc.area_tecnologica)}">
-                    <i class="ph ph-book-open"></i>
+            <div class="token-item group hover:border-slate-300 transition-colors" onclick="app.planejamento.openModalCatalogoUC('${uc.id}')">
+                <div class="token-icon bg-white border border-slate-100 text-slate-600">
+                    <i class="ph ph-book-open text-xl"></i>
                 </div>
                 <div class="token-info">
-                    <div class="token-name">${uc.nome}</div>
-                    <div class="token-meta">
-                        <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: ${uc.ativo ? 'var(--success)' : '#cbd5e1'}; margin-right: 4px;"></span>
-                        ${uc.area_tecnologica} • ${uc.carga_horaria} horas
+                    <div class="token-name group-hover:text-primary transition-colors">${uc.nome}</div>
+                    <div class="token-meta flex items-center gap-2 mt-1">
+                        <span class="text-slate-500">${uc.carga_horaria}h</span>
+                        <span class="text-slate-300 px-1">|</span>
+                        <div class="flex flex-wrap gap-1">
+                            ${Array.isArray(uc.area_tecnologica)
+                ? uc.area_tecnologica.map(a => `<span class="text-xs font-medium text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">${a}</span>`).join('')
+                : `<span class="text-xs font-medium text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">${uc.area_tecnologica || 'Geral'}</span>`}
+                        </div>
                     </div>
                 </div>
-                <div class="flex items-center gap-3">
-                    <div class="badge badge-neutral">${uc.tipo || 'Padrão'}</div>
-                    <button onclick="event.stopPropagation(); app.planejamento.deleteCatalogoUC('${uc.id}')" class="btn btn-secondary text-red-500 hover:bg-red-50 px-2 opacity-0 group-hover:opacity-100 transition-opacity" title="Excluir do Catálogo">
-                        <i class="ph ph-trash"></i>
+                <div class="flex items-center gap-2 pl-4 border-l border-slate-100">
+                    <div class="badge badge-neutral whitespace-nowrap">${uc.tipo || 'Padrão'}</div>
+                    
+                    <button onclick="event.stopPropagation(); app.planejamento.openModalCatalogoUCDetails('${uc.id}')" 
+                            class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg opacity-60 group-hover:opacity-100 transition-all ml-1" 
+                            title="Ver Detalhes Pedagógicos">
+                        <i class="ph ph-eye text-lg"></i>
                     </button>
-                    <i class="ph ph-caret-right text-gray-300"></i>
+                    
+                    <button onclick="event.stopPropagation(); app.planejamento.deleteCatalogoUC('${uc.id}')" 
+                            class="p-2 text-red-500 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all" 
+                            title="Excluir do Catálogo">
+                        <i class="ph ph-trash text-lg"></i>
+                    </button>
+                    
+                    <i class="ph ph-caret-right text-gray-300 ml-2"></i>
                 </div>
             </div>
         `).join('');
@@ -419,7 +435,12 @@ export const planejamento = {
 
         const filtered = app.state.catalogoUcs.filter(uc => {
             const matchName = uc.nome.toLowerCase().includes(term);
-            const matchArea = area ? uc.area_tecnologica === area : true;
+            // Support both Array and String for area_tecnologica
+            const matchArea = area ? (
+                Array.isArray(uc.area_tecnologica)
+                    ? uc.area_tecnologica.includes(area)
+                    : uc.area_tecnologica === area
+            ) : true;
             return matchName && matchArea;
         });
 
@@ -488,13 +509,7 @@ export const planejamento = {
                             </div>
                         </div>
 
-                        <div class="input-group" style="max-width: 200px;">
-                             <label class="input-label">Status</label>
-                             <select name="ativo" class="input-field">
-                                <option value="true" ${uc?.ativo !== false ? 'selected' : ''}>Ativa</option>
-                                <option value="false" ${uc?.ativo === false ? 'selected' : ''}>Inativa</option>
-                            </select>
-                        </div>
+
                     </div>
 
                     <!-- TAB PEDAGÓGICO -->
@@ -563,7 +578,7 @@ export const planejamento = {
             carga_horaria: parseInt(f.carga_horaria.value),
             area_tecnologica: selectedAreas, // Saves Array directly
             tipo: f.tipo.value,
-            ativo: f.ativo.value === 'true',
+            // ativo field removed as it does not exist in DB
             // Pedagogical Data
             objetivo: f.objetivo.value,
             bibliografia_basica: f.bibliografia.value,
@@ -574,25 +589,135 @@ export const planejamento = {
         };
 
         const { error } = id
-            ? await supabase.from('catalogo_ucs').update(data).eq('id', id)
-            : await supabase.from('catalogo_ucs').insert(data);
+            ? await supabase.from('unidades_curriculares').update(data).eq('id', id)
+            : await supabase.from('unidades_curriculares').insert(data);
 
         if (error) {
             ui.toast('Erro ao salvar: ' + error.message, 'error');
         } else {
-            ui.toast('UC salva no catálogo com sucesso!', 'success');
+            // Se for edição, recalcular Carga Horária das matrizes que usam esta UC
+            if (id) {
+                try {
+                    const { data: links } = await supabase
+                        .from('matriz_ucs')
+                        .select('matriz_id')
+                        .eq('uc_id', id);
+
+                    if (links && links.length > 0) {
+                        const uniqueMatrizIds = [...new Set(links.map(l => l.matriz_id))];
+                        ui.toast(`Atualizando ${uniqueMatrizIds.length} matrizes vinculadas...`, 'info');
+
+                        await Promise.all(uniqueMatrizIds.map(mid => matrizes.updateTotalHours(mid)));
+                    }
+                } catch (cascadeErr) {
+                    console.error('Erro ao atualizar matrizes em cascata:', cascadeErr);
+                }
+            }
+
+            ui.toast('UC salva e alterações propagadas com sucesso!', 'success');
             ui.closeModal();
             this.loadUCsAsync(); // Reload list
         }
     },
 
-    async deleteCatalogoUC(id) {
-        if (!confirm('Tem certeza? Isso pode afetar matrizes que usam esta UC (se não houver FK restritiva).')) return;
+    openModalCatalogoUCDetails(id) {
+        const uc = app.state.catalogoUcs.find(u => u.id === id);
+        if (!uc) return;
 
-        const { error } = await supabase.from('catalogo_ucs').delete().eq('id', id);
-        if (error) ui.toast('Erro ao excluir: ' + error.message, 'error');
-        else {
-            ui.toast('UC removida do catálogo.');
+        // Helper to render list
+        const renderList = (arr) => {
+            if (!arr || arr.length === 0) return '<p class="text-gray-400 italic">Nenhum registro.</p>';
+            return `<ul class="list-disc pl-5 space-y-1 text-slate-700">${arr.map(i => `<li>${i}</li>`).join('')}</ul>`;
+        };
+
+        ui.openModalWindow(`Detalhes: ${uc.nome}`, `
+            <div class="animate-fade-in text-sm">
+                <!-- Header Info -->
+                <div class="bg-slate-50 p-4 rounded-lg mb-4 border border-slate-100">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <span class="block text-xs font-bold text-slate-400 uppercase">Carga Horária</span>
+                            <span class="text-slate-800 font-medium">${uc.carga_horaria} horas</span>
+                        </div>
+                        <div>
+                            <span class="block text-xs font-bold text-slate-400 uppercase">Tipo</span>
+                            <span class="badge badge-neutral mt-1">${uc.tipo || 'Padrão'}</span>
+                        </div>
+                        <div class="col-span-2">
+                            <span class="block text-xs font-bold text-slate-400 uppercase mb-1">Áreas Tecnológicas</span>
+                            <div class="flex gap-2 flex-wrap">
+                                ${Array.isArray(uc.area_tecnologica)
+                ? uc.area_tecnologica.map(a => `<span class="badge-area">${a}</span>`).join('')
+                : `<span class="badge-area">${uc.area_tecnologica}</span>`}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabs -->
+                <div class="tab-pills mb-4" style="justify-content: center;">
+                   <button type="button" class="tab-pill active" onclick="ui.switchModalTab('view-pedag')"><i class="ph ph-book-bookmark"></i> Pedagógico</button>
+                   <button type="button" class="tab-pill" onclick="ui.switchModalTab('view-cap')"><i class="ph ph-brain"></i> Capacidades</button>
+                </div>
+
+                <div id="view-pedag" class="modal-tab-content space-y-4">
+                    <div>
+                        <h4 class="font-bold text-slate-700 mb-2 border-b border-slate-100 pb-1">Objetivo Geral</h4>
+                        <p class="text-slate-600 leading-relaxed whitespace-pre-line">${uc.objetivo || '<span class="text-gray-400 italic">Não informado.</span>'}</p>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-slate-700 mb-2 border-b border-slate-100 pb-1">Bibliografia Básica</h4>
+                        <p class="text-slate-600 leading-relaxed whitespace-pre-line">${uc.bibliografia_basica || '<span class="text-gray-400 italic">Não informada.</span>'}</p>
+                    </div>
+                </div>
+
+                <div id="view-cap" class="modal-tab-content hidden space-y-4">
+                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <h4 class="font-bold text-emerald-700 mb-2"><i class="ph ph-check-circle"></i> Conhecimentos (Saber)</h4>
+                            ${renderList(uc.conhecimentos)}
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-blue-700 mb-2"><i class="ph ph-wrench"></i> Cap. Técnicas (Saber Fazer)</h4>
+                            ${renderList(uc.capacidades_tecnicas)}
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-purple-700 mb-2"><i class="ph ph-users"></i> Cap. Sociais</h4>
+                            ${renderList(uc.capacidades_sociais)}
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-pink-700 mb-2"><i class="ph ph-heart"></i> Cap. Socioemocionais</h4>
+                            ${renderList(uc.capacidades_socioemocionais)}
+                        </div>
+                     </div>
+                </div>
+
+                <div class="mt-6 pt-4 border-t border-slate-100 text-right">
+                    <button onclick="app.planejamento.openModalCatalogoUC('${uc.id}')" class="btn btn-secondary text-primary">
+                        <i class="ph ph-pencil-simple"></i> Editar
+                    </button>
+                    <button onclick="ui.closeModal()" class="btn btn-primary ml-2">Fechar</button>
+                </div>
+            </div>
+        `, 'modal-lg');
+    },
+
+    async deleteCatalogoUC(id) {
+        if (!confirm('Tem certeza que deseja excluir esta Unidade Curricular?')) return;
+
+        const { error } = await supabase.from('unidades_curriculares').delete().eq('id', id);
+
+        if (error) {
+            console.error('Erro ao excluir UC:', error);
+            if (error.message.includes('lotacoes_turma')) {
+                ui.toast('Não é possível excluir: Esta UC possui professores alocados em turmas (Lotações).', 'error');
+            } else if (error.message.includes('matriz_ucs')) {
+                ui.toast('Não é possível excluir: Esta UC está vinculada a uma ou mais Matrizes Curriculares.', 'error');
+            } else {
+                ui.toast('Erro ao excluir: ' + error.message, 'error');
+            }
+        } else {
+            ui.toast('UC removida do catálogo com sucesso!', 'success');
             this.loadUCsAsync();
         }
     },

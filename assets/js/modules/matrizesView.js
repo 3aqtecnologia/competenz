@@ -55,7 +55,7 @@ export const matrizesView = {
         const totalHours = linkedUCs.reduce((sum, uc) => sum + (uc.carga_horaria || 0), 0);
 
         // 2. Fetch Full Catalog (for the "Search/Add" tab)
-        const { data: catRaw } = await supabase.from('catalogo_ucs').select('*').order('nome');
+        const { data: catRaw } = await supabase.from('unidades_curriculares').select('*').order('nome');
         catalog = catRaw || [];
 
         // Filter catalog: Mark those already linked or exclude them?
@@ -153,12 +153,17 @@ export const matrizesView = {
                  </div>
 <br>
                  <!-- Footer -->
-                 <div class="bg-white border-t border-gray-200 p-4 shrink-0 z-20 flex items-center justify-end gap-3">
+                 <div class="bg-white border-t border-gray-200 p-4 shrink-0 z-20 flex items-center justify-between gap-3">
 
-                     <button type="button" class="btn btn-secondary h-[48px] px-6" onclick="app.matrizesView.closeModal()">Cancelar</button>
-                     <button type="submit" form="form-matriz" class="btn btn-primary h-[48px] px-8 shadow-lg shadow-blue-500/20">
-                        <i class="ph ph-floppy-disk"></i> Salvar Matriz
-                     </button>
+                     ${id ? `<button type="button" class="btn btn-secondary text-red-600 hover:bg-red-50 h-[48px] px-6" onclick="app.matrizesView.deleteMatrix('${id}')">
+                         <i class="ph ph-trash"></i> Excluir Matriz
+                     </button>` : '<div></div>'}
+                     <div class="flex gap-3">
+                         <button type="button" class="btn btn-secondary h-[48px] px-6" onclick="app.matrizesView.closeModal()">Cancelar</button>
+                         <button type="submit" form="form-matriz" class="btn btn-primary h-[48px] px-8 shadow-lg shadow-blue-500/20">
+                            <i class="ph ph-floppy-disk"></i> Salvar Matriz
+                         </button>
+                     </div>
                  </div>
              </div>
         `, 'modal-lg');
@@ -277,8 +282,16 @@ export const matrizesView = {
     },
 
     async deleteMatrix(id) {
-        if (!confirm('Excluir?')) return;
-        try { await matrizes.delete(id); ui.toast('Excluída'); ui.closeModal(); if (window.app) window.app.refreshCurrentView(); } catch (e) { ui.toast(e.message, 'error'); }
+        if (!confirm('Tem certeza que deseja excluir esta matriz? Esta ação não pode ser desfeita.')) return;
+        try {
+            await matrizes.delete(id);
+            ui.toast('Matriz excluída com sucesso!', 'success');
+            this.closeModal();
+            if (window.app) window.app.refreshCurrentView();
+        } catch (e) {
+            console.error('Erro ao excluir matriz:', e);
+            ui.toast(e.message, 'error');
+        }
     },
 
     async importUC(id, mid) {

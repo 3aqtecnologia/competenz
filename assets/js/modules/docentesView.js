@@ -101,6 +101,17 @@ export const docentesView = {
                         ${d.nivel || 'Nível n/i'} • ${d.area_formacao || 'Formação n/i'}
                         <span style="margin: 0 6px;">|</span>
                         <span title="Áreas de Atuação" class="text-slate-500 truncate max-w-[300px] inline-block align-bottom">${areasBadges}</span>
+                        ${(() => {
+                    const activeLotacao = d.lotacoes_turma?.find(l => !l.data_fim || new Date(l.data_fim) >= new Date());
+                    if (activeLotacao && activeLotacao.turmas) {
+                        return `
+                                <div class="mt-1 flex items-center gap-1 text-xs text-amber-600 font-medium">
+                                    <i class="ph ph-chalkboard-teacher"></i>
+                                    <span>Em aula: ${activeLotacao.turmas.codigo || activeLotacao.turmas.nome}</span>
+                                </div>`;
+                    }
+                    return '';
+                })()}
                     </div>
                 </div>
                 <div class="flex items-center gap-3">
@@ -259,6 +270,24 @@ export const docentesView = {
                                     </div>
                                 </div>
                             </div>
+                            
+                            <!-- Current Assignment (Lotação Atual) - Read Only -->
+                            ${(() => {
+                const activeLotacao = d.lotacoes_turma?.find(l => !l.data_fim || new Date(l.data_fim) >= new Date());
+                if (activeLotacao && activeLotacao.turmas) {
+                    return `
+                                    <div class="bg-amber-50 p-4 rounded-xl border border-amber-100 flex items-start gap-3">
+                                        <div class="bg-amber-100 text-amber-600 p-2 rounded-lg shrink-0">
+                                            <i class="ph-bold ph-chalkboard-teacher text-lg"></i>
+                                        </div>
+                                        <div>
+                                            <h5 class="text-sm font-bold text-amber-800">Em atividade docente</h5>
+                                            <p class="text-xs text-amber-700 mt-1">Este docente está atualmente alocado na turma <strong>${activeLotacao.turmas.codigo || activeLotacao.turmas.nome}</strong> (Início: ${new Date(activeLotacao.data_inicio).toLocaleDateString()}, Fim:: ${new Date(activeLotacao.data_fim).toLocaleDateString()}).</p>
+                                        </div>
+                                    </div>`;
+                }
+                return '';
+            })()}
 
                             <!-- Availability -->
                             <div class="input-group">
@@ -286,14 +315,14 @@ export const docentesView = {
                                 <label class="input-label">Áreas Tecnológicas (Múltipla Escolha)</label>
                                 <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; max-height: 120px; overflow-y: auto; padding: 0.5rem; border: 1px solid var(--border); border-radius: 8px; background: #f8fafc;">
                                     ${areas.map(a => {
-            const isSelected = linkedAreaIds.includes(a.id);
-            return `
+                const isSelected = linkedAreaIds.includes(a.id);
+                return `
                                         <label class="checkbox-tag">
                                             <input type="checkbox" name="area_${a.id}" value="${a.id}" ${isSelected ? 'checked' : ''}>
                                             <span>${a.nome}</span>
                                         </label>
                                         `;
-        }).join('')}
+            }).join('')}
                                 </div>
                                  ${areas.length === 0 ? '<div class="text-xs text-gray-400 mt-1 italic">Nenhuma área cadastrada.</div>' : ''}
                             </div>
@@ -396,14 +425,31 @@ export const docentesView = {
     },
 
     async delete(id) {
-        if (!confirm('Tem certeza?')) return;
+        if (!confirm('Tem certeza que deseja excluir este docente? Esta ação não pode ser desfeita.')) return;
         try {
             await docentes.delete(id);
-            ui.toast('Excluído');
+            ui.toast('Docente excluído com sucesso!', 'success');
             ui.closeModal();
             if (window.app) window.app.refreshCurrentView();
         } catch (err) {
-            ui.toast('Erro', 'error');
+            console.error('Erro ao excluir docente:', err);
+
+            // Tratamento específico para violação de chave estrangeira
+            let errorMessage = 'Erro ao excluir docente';
+
+            if (err.message && err.message.includes('foreign key constraint')) {
+                if (err.message.includes('lotacoes_turma')) {
+                    errorMessage = 'Não é possível excluir este docente pois ele está vinculado a uma ou mais turmas. Remova as vinculações primeiro.';
+                } else if (err.message.includes('usuario_docentes')) {
+                    errorMessage = 'Não é possível excluir este docente pois ele está vinculado a um ou mais usuários. Remova as vinculações primeiro.';
+                } else {
+                    errorMessage = 'Não é possível excluir este docente pois ele possui vínculos ativos no sistema. Remova as vinculações primeiro.';
+                }
+            } else if (err.message) {
+                errorMessage = 'Erro ao excluir docente: ' + err.message;
+            }
+
+            ui.toast(errorMessage, 'error');
         }
     }
 };

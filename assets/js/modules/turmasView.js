@@ -573,6 +573,9 @@ export const turmasView = {
         const rows = ucs.map((uc, index) => {
             const lotacao = lotacoes.find(l => l.uc_id === uc.id) || {};
 
+            // Extrair docente_id - pode vir como ID direto ou como objeto docentes
+            const docenteId = lotacao.docente_id || lotacao.docentes?.id || null;
+
             return `
                 <tr class="hover:bg-slate-50 group" data-uc-id="${uc.id}">
                     <td class="p-3 text-slate-500 font-mono text-xs">
@@ -601,7 +604,7 @@ export const turmasView = {
                             <option value="">Selecione...</option>
                             ${teachers.filter(t => {
                 // Always show the currently selected teacher
-                if (lotacao.docente_id === t.id) return true;
+                if (docenteId === t.id) return true;
 
                 // Get UC area
                 const ucArea = uc.area_tecnologica;
@@ -622,7 +625,7 @@ export const turmasView = {
                     const teacherAreaName = da.areas_tecnologicas?.nome;
                     return ucAreasList.includes(teacherAreaName);
                 });
-            }).map(d => `<option value="${d.id}" ${lotacao.docente_id === d.id ? 'selected' : ''}>${d.nome}</option>`).join('')}
+            }).map(d => `<option value="${d.id}" ${docenteId === d.id ? 'selected' : ''}>${d.nome}</option>`).join('')}
                         </select>
                     </td>
                 </tr>
