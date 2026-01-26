@@ -497,6 +497,8 @@ export const usuarios = {
                         <input 
                             type="tel" 
                             name="telefone" 
+                            data-mask="phone"
+                            placeholder="(00) 00000-0000"
                             class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                         >
                     </div>
@@ -540,6 +542,21 @@ export const usuarios = {
         `;
 
         ui.openModal('Novo Usuário', html);
+
+        // Aplicar máscaras após abrir o modal
+        if (window.IMask) {
+            setTimeout(() => {
+                const phoneInput = document.querySelector('input[data-mask="phone"]');
+                if (phoneInput) {
+                    window.IMask(phoneInput, {
+                        mask: [
+                            { mask: '(00) 0000-0000' },
+                            { mask: '(00) 00000-0000' }
+                        ]
+                    });
+                }
+            }, 100);
+        }
 
         document.getElementById('userForm').addEventListener('submit', async (e) => {
             e.preventDefault();
