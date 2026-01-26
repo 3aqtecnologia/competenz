@@ -8,6 +8,22 @@
 
 ## 🆕 Histórico de Versões
 
+### v2.4 - Arquitetura Modular com Antigravity Kit (Jan/2026)
+
+- **🤖 Antigravity Kit Integration**:
+  - **Agentes Especializados**: Implementação de agentes AI especializados (Frontend Specialist, Backend Specialist, Mobile Developer, etc.) para desenvolvimento guiado.
+  - **Skills Modulares**: Sistema de skills reutilizáveis (clean-code, react-patterns, frontend-design, etc.) para melhores práticas.
+  - **Workflows Automatizados**: Comandos slash (/create, /debug, /deploy, /test) para automação de tarefas comuns.
+  - **Intelligent Routing**: Seleção automática do agente mais adequado baseado no contexto da tarefa.
+- **📐 Design System Consistency**:
+  - **Frontend Specialist Rules**: Aplicação rigorosa de regras de design (Purple Ban, Layout Diversification, Deep Design Thinking).
+  - **Anti-Cliché Protocol**: Verificação automática contra padrões genéricos (Bento Grid, Mesh Gradients, Standard Splits).
+  - **Quality Control Loop**: Validação obrigatória (lint + TypeScript) após cada edição.
+- **🔧 Developer Experience**:
+  - **GEMINI.md**: Arquivo central de configuração do comportamento da AI no workspace.
+  - **Task Planning**: Sistema de planejamento estruturado com artifacts e walkthroughs.
+  - **Code Review Automation**: Checklists automáticos de qualidade de código.
+
 ### v2.3 - Automação Docente & Style Guide 2.0 (Jan/2026)
 
 - **🎨 Style Guide 2.0 (Premium UI)**:
