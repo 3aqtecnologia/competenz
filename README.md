@@ -8,6 +8,22 @@
 
 ## 🆕 Histórico de Versões
 
+### v2.5 - Gestão de Acessos Completa (Jan/2026)
+
+- **👥 Gestão de Usuários Aprimorada**:
+  - **Carregamento Automático**: Dados de usuários e perfis carregados automaticamente do Supabase ao acessar a tab.
+  - **Loading State**: Spinner de carregamento enquanto busca dados do banco.
+  - **Edição Completa**: Implementação total da funcionalidade de edição de usuários com todos os campos.
+  - **Vinculações Dinâmicas**: Gerenciamento de vinculações de turmas (Analista de Educação) e docentes (Coordenador Pedagógico).
+- **🎨 UX Melhorada**:
+  - **Máscaras de Input**: Aplicação automática de máscara de telefone nos formulários de criação e edição.
+  - **Formulários Inteligentes**: Campos de vinculação aparecem/desaparecem dinamicamente baseado no perfil selecionado.
+  - **Feedback Visual**: Toast messages para todas as operações (criar, editar, excluir).
+- **🔧 Correções Técnicas**:
+  - **Alias openModal**: Adicionada função `ui.openModal()` como alias de `ui.openModalWindow()` para compatibilidade.
+  - **Pré-preenchimento**: Todos os campos do formulário de edição são pré-preenchidos com valores atuais.
+  - **Checkbox de Status**: Toggle "Usuário Ativo" funcional no formulário de edição.
+
 ### v2.4 - Arquitetura Modular com Antigravity Kit (Jan/2026)
 
 - **🤖 Antigravity Kit Integration**:

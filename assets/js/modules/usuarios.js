@@ -675,8 +675,252 @@ export const usuarios = {
     },
 
     async showEditModal(userId) {
-        // Implementar edição (similar ao create)
-        ui.toast('Funcionalidade de edição em desenvolvimento', 'info');
+        const user = this.usuarios.find(u => u.id === userId);
+        if (!user) {
+            ui.toast('Usuário não encontrado', 'error');
+            return;
+        }
+
+        // Buscar vinculações existentes
+        let vinculacoesTurmas = [];
+        let vinculacoesDocentes = [];
+
+        try {
+            const [turmasRes, docentesRes] = await Promise.all([
+                supabase.from('usuario_turmas').select('turma_id').eq('usuario_id', userId),
+                supabase.from('usuario_docentes').select('docente_id').eq('usuario_id', userId)
+            ]);
+
+            vinculacoesTurmas = turmasRes.data?.map(v => v.turma_id) || [];
+            vinculacoesDocentes = docentesRes.data?.map(v => v.docente_id) || [];
+        } catch (error) {
+            console.error('Erro ao carregar vinculações:', error);
+        }
+
+        const perfil = this.perfis.find(p => p.id === user.perfil_id);
+        const showVinculacoes = perfil && (perfil.nome === 'Analista de Educação' || perfil.nome === 'Coordenador Pedagógico');
+
+        const html = `
+            <form id="userEditForm" class="space-y-6">
+                <input type="hidden" name="id" value="${user.id}">
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Nome Completo *
+                        </label>
+                        <input 
+                            type="text" 
+                            name="nome_completo" 
+                            value="${user.nome_completo || ''}"
+                            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all" 
+                            required
+                        >
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            E-mail *
+                        </label>
+                        <input 
+                            type="email" 
+                            name="email" 
+                            value="${user.email || ''}"
+                            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all" 
+                            required
+                        >
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Telefone
+                        </label>
+                        <input 
+                            type="tel" 
+                            name="telefone" 
+                            value="${user.telefone || ''}"
+                            data-mask="phone"
+                            placeholder="(00) 00000-0000"
+                            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                        >
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Perfil de Acesso *
+                        </label>
+                        <select 
+                            name="perfil_id" 
+                            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all" 
+                            required 
+                            onchange="usuarios.handlePerfilChangeEdit(this.value)"
+                        >
+                            <option value="">Selecione um perfil...</option>
+                            ${this.perfis.filter(p => p.ativo).map(p => `
+                                <option value="${p.id}" ${p.id === user.perfil_id ? 'selected' : ''}>${p.nome}</option>
+                            `).join('')}
+                        </select>
+                    </div>
+
+                    <div id="vinculacoes-edit" class="md:col-span-2" style="display: ${showVinculacoes ? 'block' : 'none'};">
+                        ${this.renderVinculacoesEdit(perfil, vinculacoesTurmas, vinculacoesDocentes)}
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input 
+                                type="checkbox" 
+                                name="ativo" 
+                                ${user.ativo ? 'checked' : ''}
+                                class="w-4 h-4 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
+                            >
+                            <span class="text-sm font-medium text-gray-700">Usuário Ativo</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="flex gap-3 pt-4 border-t">
+                    <button 
+                        type="button" 
+                        onclick="ui.closeModal()" 
+                        class="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors"
+                    >
+                        Cancelar
+                    </button>
+                    <button 
+                        type="submit" 
+                        class="flex-1 px-4 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg hover:from-purple-700 hover:to-indigo-700 font-medium transition-all"
+                    >
+                        Salvar Alterações
+                    </button>
+                </div>
+            </form>
+        `;
+
+        ui.openModal('Editar Usuário', html);
+
+        // Aplicar máscaras após abrir o modal
+        if (window.IMask) {
+            setTimeout(() => {
+                const phoneInput = document.querySelector('input[data-mask="phone"]');
+                if (phoneInput) {
+                    window.IMask(phoneInput, {
+                        mask: [
+                            { mask: '(00) 0000-0000' },
+                            { mask: '(00) 00000-0000' }
+                        ]
+                    });
+                }
+            }, 100);
+        }
+
+        document.getElementById('userEditForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await this.updateUser(new FormData(e.target));
+        });
+    },
+
+    renderVinculacoesEdit(perfil, turmasSelecionadas = [], docentesSelecionados = []) {
+        if (!perfil) return '';
+
+        if (perfil.nome === 'Analista de Educação') {
+            return `
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Turmas Vinculadas
+                </label>
+                <select name="turmas" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all" multiple size="5">
+                    ${this.turmas.map(t => `
+                        <option value="${t.id}" ${turmasSelecionadas.includes(t.id) ? 'selected' : ''}>${t.codigo} - ${t.nome}</option>
+                    `).join('')}
+                </select>
+                <p class="text-xs text-gray-500 mt-1">Segure Ctrl para selecionar múltiplas turmas</p>
+            `;
+        }
+
+        if (perfil.nome === 'Coordenador Pedagógico') {
+            return `
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Docentes Vinculados
+                </label>
+                <select name="docentes" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all" multiple size="5">
+                    ${this.docentes.map(d => `
+                        <option value="${d.id}" ${docentesSelecionados.includes(d.id) ? 'selected' : ''}>${d.nome}</option>
+                    `).join('')}
+                </select>
+                <p class="text-xs text-gray-500 mt-1">Segure Ctrl para selecionar múltiplos docentes</p>
+            `;
+        }
+
+        return '';
+    },
+
+    handlePerfilChangeEdit(perfilId) {
+        const perfil = this.perfis.find(p => p.id === perfilId);
+        const vinculacoesDiv = document.getElementById('vinculacoes-edit');
+
+        if (!perfil) {
+            vinculacoesDiv.style.display = 'none';
+            return;
+        }
+
+        if (perfil.nome === 'Analista de Educação' || perfil.nome === 'Coordenador Pedagógico') {
+            vinculacoesDiv.innerHTML = this.renderVinculacoesEdit(perfil, [], []);
+            vinculacoesDiv.style.display = 'block';
+        } else {
+            vinculacoesDiv.style.display = 'none';
+        }
+    },
+
+    async updateUser(formData) {
+        try {
+            const userId = formData.get('id');
+
+            const userData = {
+                nome_completo: formData.get('nome_completo'),
+                email: formData.get('email'),
+                telefone: formData.get('telefone'),
+                perfil_id: formData.get('perfil_id'),
+                ativo: formData.get('ativo') === 'on'
+            };
+
+            const { error } = await supabase
+                .from('usuarios')
+                .update(userData)
+                .eq('id', userId);
+
+            if (error) throw error;
+
+            // Atualizar vinculações
+            const turmas = formData.getAll('turmas');
+            const docentes = formData.getAll('docentes');
+
+            // Remover vinculações antigas
+            await Promise.all([
+                supabase.from('usuario_turmas').delete().eq('usuario_id', userId),
+                supabase.from('usuario_docentes').delete().eq('usuario_id', userId)
+            ]);
+
+            // Adicionar novas vinculações
+            if (turmas.length > 0) {
+                await supabase.from('usuario_turmas').insert(
+                    turmas.map(turma_id => ({ usuario_id: userId, turma_id }))
+                );
+            }
+
+            if (docentes.length > 0) {
+                await supabase.from('usuario_docentes').insert(
+                    docentes.map(docente_id => ({ usuario_id: userId, docente_id }))
+                );
+            }
+
+            ui.toast('Usuário atualizado com sucesso!', 'success');
+            ui.closeModal();
+            await this.loadData();
+            window.app.renderView('configuracoes');
+        } catch (error) {
+            console.error('Erro ao atualizar usuário:', error);
+            ui.toast('Erro ao atualizar usuário: ' + error.message, 'error');
+        }
     },
 
     /* === PERFIS MANAGEMENT === */
